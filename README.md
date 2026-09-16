@@ -5,9 +5,10 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 3 — Core Gameplay Prototype.** Account auth plus a playable
-> test level: fly, shoot enemies, take damage, die and restart. Later phases add
-> enemies, levels, progression and bosses.
+> Status: **Phase 4 — Combat & Enemy System.** Account auth plus a playable level
+> with four modular enemy types (fighter, bomber, mine, turret), enemy
+> projectiles, formations and combat effects. Later phases add levels,
+> progression and bosses.
 
 ## Overview
 

@@ -51,10 +51,26 @@ increment, tested, reviewed and merged before the next begins.
 - Verified in a real browser via headless Chrome (scene boots; keyboard, mouse,
   shooting, collision, death and restart behave as expected).
 
-## Phase 4 preview (next, pending approval)
+## Phase 4 acceptance criteria (complete)
 
-Combat & enemy system: additional enemy types (bomber, missile, mine, turret),
-enemy projectiles, formations, a modular behavior registry, and richer
-explosion/effect feedback.
+- Weapon architecture: damage, fire rate, projectile speed/count/spread and
+  lifetime, all data-driven, with cooldown and projectile lifecycle.
+- Four modular enemy types via a behavior registry: fighter (seeks and fires),
+  bomber (slow, tough, spread salvo), mine (passive contact obstacle) and turret
+  (anchors and fires aimed shots).
+- Enemy projectiles, enemy health/damage/death, spawn formations
+  (`random`/`line`/`v`/`column`) and collision handling.
+- Reusable explosion, impact, hit and muzzle effects; pooled sprites for enemies
+  and projectiles; in-place entity compaction.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified in a real browser (all enemy types, simultaneous enemies, player and
+  enemy projectiles, player damage, effects) with stable object counts.
+
+## Phase 5 preview (next, pending approval)
+
+Level system: a full level data model and loader, phased spawn timelines,
+difficulty scaling, level completion/failure and unlocking, plus enough sample
+levels to validate the system before authoring 50.
+
 
 

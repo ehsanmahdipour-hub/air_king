@@ -1,32 +1,41 @@
 /**
- * Weapon definitions. The shape is intentionally general (damage, fire rate,
- * projectile speed/count/spread) so future weapons are new data entries rather
- * than engine changes. Only the basic cannon is used in the prototype.
+ * Projectile and weapon definitions. Projectile behaviour is fully described by
+ * data (damage, speed, radius, lifetime, count, spread) so new player weapons
+ * are new entries and new enemy weapons reuse the same structure.
  */
+export interface ProjectileSpec {
+  damage: number;
+  /** Travel speed in units per second. */
+  speed: number;
+  radius: number;
+  /** Maximum lifetime in seconds before the projectile expires. */
+  lifeSeconds: number;
+  /** Number of projectiles per shot, spread symmetrically around the aim angle. */
+  count: number;
+  /** Total spread angle in degrees across all projectiles. */
+  spreadDegrees: number;
+}
+
 export interface WeaponConfig {
   id: string;
   displayName: string;
-  damage: number;
   /** Shots per second. */
   fireRate: number;
-  /** Projectile travel speed in units per second. */
-  projectileSpeed: number;
-  projectileRadius: number;
-  /** Number of projectiles fired per shot. */
-  projectileCount: number;
-  /** Total spread angle in degrees across all projectiles. */
-  spreadDegrees: number;
+  projectile: ProjectileSpec;
 }
 
 export const BASIC_CANNON: WeaponConfig = {
   id: 'basic-cannon',
   displayName: 'Basic Cannon',
-  damage: 10,
   fireRate: 6,
-  projectileSpeed: 720,
-  projectileRadius: 4,
-  projectileCount: 1,
-  spreadDegrees: 0,
+  projectile: {
+    damage: 10,
+    speed: 720,
+    radius: 4,
+    lifeSeconds: 1.4,
+    count: 1,
+    spreadDegrees: 0,
+  },
 };
 
 export const WEAPONS: Record<string, WeaponConfig> = {

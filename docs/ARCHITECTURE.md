@@ -48,36 +48,57 @@
 The core is a deterministic, fixed-step simulation in `shared/src/core` that is
 completely free of Phaser, DOM and network code:
 
-- `world.ts` — world state (`World`) and `createWorld` / `stepWorld`.
-- `combat.ts`, `score.ts`, `weapons.ts`, `math.ts` — small pure rule modules.
+- `entities.ts` — `World` and per-entity state (`PlayerState`, `EnemyState`,
+  `ProjectileState`, `InputState`).
+- `world.ts` — `createWorld` / `stepWorld`; wires the systems together.
+- `systems/` — focused update systems (player movement, player weapon,
+  projectiles, spawning, enemies, collisions).
+- `behaviors/` — one module per enemy behavior plus a registry (`runEnemyBehavior`).
+- `weapons.ts`, `formations.ts`, `combat.ts`, `score.ts`, `math.ts` — small pure
+  rule modules.
 - `config/` — player, enemy, weapon and level data (`shared/src/config`).
 
-`stepWorld(world, input, delta)` mutates the world and appends `GameEvent`s
-(shot fired, enemy destroyed, player hit, player destroyed) which the
-presentation layer consumes for effects. This keeps rendering, input, audio and
-gameplay rules independently testable and replaceable.
+`stepWorld(world, input, delta)` mutates the world, compacts dead entities in
+place, and appends `GameEvent`s (shot fired, enemy shot/hit/destroyed, player
+hit/destroyed) which the presentation layer consumes for effects. Rendering,
+input, effects and gameplay rules stay independently testable and replaceable.
+
+### Modular enemies and weapons
+
+- Each enemy config is a **discriminated union on `behavior`**, so a behavior
+  receives exactly its own typed fields. The registry (`behaviors/index.ts`)
+  narrows the union; adding an enemy is a config entry, and adding a behavior is
+  one small module plus a registry case — never an engine change.
+- Behaviors only receive an `EnemyBehaviorContext` (enemy, player, arena, delta)
+  and announce shots via `fire`. They have no access to world internals.
+- Projectiles and weapons share one `ProjectileSpec` (damage, speed, radius,
+  lifetime, count, spread). Player weapons and enemy weapons use the same
+  `createProjectiles` function, so new weapons are data.
+- Levels are an ordered list of `SpawnGroup`s with formations
+  (`random`/`line`/`v`/`column`); `formations.ts` maps a group index to a spawn
+  position.
 
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
-- `render/WorldRenderer.ts` — world state → sprites, background scroll, effects.
+- `render/WorldRenderer.ts` — world state → sprites, background scroll.
+- `render/Effects.ts` — shared particle emitters for explosion/impact/hit/muzzle.
+- `render/SpritePool.ts` — reuses `Image` objects to avoid per-frame allocation.
 - `ui/Hud.ts` — health, score, level, game-over overlay.
-- `scenes/GameScene.ts` — timing loop wiring, restart handling, no game rules.
-- `textures.ts` — procedurally generated placeholder sprites.
+- `scenes/GameScene.ts` — timing loop wiring, event → effect mapping, restart.
+- `textures.ts` — procedurally generated placeholder sprites per enemy type.
 
 Rendering depth is faked on a flat 2D gameplay plane via a scrolling starfield
-whose per-star parallax and scale suggest distance. Later systems (multiple
-enemy types, formations, bosses) extend the simulation and config rather than
-the engine.
+whose per-star parallax and scale suggest distance.
 
 ## Current phase
 
-Phase 3 adds the core gameplay prototype: a pure simulation (player movement,
-weapons, spawning, collisions, health, score, game over), data-driven player,
-enemy, weapon and level config, a Phaser adapter split into input, renderer, HUD
-and scene modules, and one playable test level. Phase 2 added authentication and
-Phase 1 the project skeleton; the remaining systems above are implemented in
-later phases.
+Phase 4 adds the modular combat system: a player weapon architecture, four enemy
+types (fighter, bomber, mine, turret) with pluggable behaviors, enemy
+projectiles, spawn formations, damage/death, reusable effects and sprite
+pooling. Phase 3 built the core gameplay prototype, Phase 2 authentication and
+Phase 1 the project skeleton; remaining systems (levels, progression, bosses)
+are implemented in later phases.
 
 
 ## Server authority and trust model

@@ -1,15 +1,18 @@
-/**
- * Enemy definitions. `behavior` selects the movement strategy in the
- * simulation; only `straight` exists in the prototype. New enemies are added as
- * data entries, and new behaviors as additional strategy implementations.
- */
-export type EnemyBehavior = 'straight';
+import type { ProjectileSpec } from './weapons';
 
-export interface EnemyConfig {
+/**
+ * Enemy definitions. A discriminated union on `behavior` keeps each enemy's
+ * data type-safe: behaviors receive exactly the fields they need. Adding an
+ * enemy is a new config entry; adding a behavior is one small module plus a
+ * registry entry, never a change to the enemy engine.
+ */
+export type EnemyBehavior = 'fighter' | 'bomber' | 'mine' | 'turret';
+
+export interface EnemyBaseConfig {
   id: string;
   displayName: string;
   maxHealth: number;
-  /** Downward travel speed in units per second. */
+  /** Downward travel speed in units per second (also turret descent speed). */
   speed: number;
   radius: number;
   /** Damage dealt to the player on contact. */
@@ -19,19 +22,97 @@ export interface EnemyConfig {
   behavior: EnemyBehavior;
 }
 
-export const BASIC_FIGHTER: EnemyConfig = {
-  id: 'basic-fighter',
+export interface FighterConfig extends EnemyBaseConfig {
+  behavior: 'fighter';
+  /** Horizontal seek speed toward the player in units per second. */
+  horizontalSeekSpeed: number;
+  fireDelay: number;
+  fireInterval: number;
+  projectile: ProjectileSpec;
+}
+
+export interface BomberConfig extends EnemyBaseConfig {
+  behavior: 'bomber';
+  fireDelay: number;
+  fireInterval: number;
+  projectile: ProjectileSpec;
+}
+
+export interface MineConfig extends EnemyBaseConfig {
+  behavior: 'mine';
+}
+
+export interface TurretConfig extends EnemyBaseConfig {
+  behavior: 'turret';
+  /** Vertical position where the turret stops and starts firing. */
+  anchorY: number;
+  fireDelay: number;
+  fireInterval: number;
+  projectile: ProjectileSpec;
+}
+
+export type EnemyConfig = FighterConfig | BomberConfig | MineConfig | TurretConfig;
+
+export const FIGHTER: FighterConfig = {
+  id: 'fighter',
   displayName: 'Fighter',
+  behavior: 'fighter',
   maxHealth: 20,
-  speed: 150,
+  speed: 170,
   radius: 16,
   contactDamage: 20,
   scoreValue: 100,
-  behavior: 'straight',
+  horizontalSeekSpeed: 90,
+  fireDelay: 0.9,
+  fireInterval: 1.6,
+  projectile: { damage: 8, speed: 320, radius: 5, lifeSeconds: 3, count: 1, spreadDegrees: 0 },
+};
+
+export const BOMBER: BomberConfig = {
+  id: 'bomber',
+  displayName: 'Bomber',
+  behavior: 'bomber',
+  maxHealth: 70,
+  speed: 80,
+  radius: 24,
+  contactDamage: 30,
+  scoreValue: 250,
+  fireDelay: 1,
+  fireInterval: 2.2,
+  projectile: { damage: 12, speed: 240, radius: 7, lifeSeconds: 3.5, count: 3, spreadDegrees: 40 },
+};
+
+export const MINE: MineConfig = {
+  id: 'mine',
+  displayName: 'Mine',
+  behavior: 'mine',
+  maxHealth: 30,
+  speed: 240,
+  radius: 18,
+  contactDamage: 35,
+  scoreValue: 50,
+};
+
+export const TURRET: TurretConfig = {
+  id: 'turret',
+  displayName: 'Turret',
+  behavior: 'turret',
+  maxHealth: 55,
+  speed: 140,
+  radius: 20,
+  contactDamage: 25,
+  scoreValue: 180,
+  anchorY: 130,
+  fireDelay: 0.8,
+  fireInterval: 1.5,
+  projectile: { damage: 10, speed: 300, radius: 6, lifeSeconds: 4, count: 1, spreadDegrees: 0 },
 };
 
 export const ENEMIES: Record<string, EnemyConfig> = {
-  [BASIC_FIGHTER.id]: BASIC_FIGHTER,
+  [FIGHTER.id]: FIGHTER,
+  [BOMBER.id]: BOMBER,
+  [MINE.id]: MINE,
+  [TURRET.id]: TURRET,
 };
 
 export function getEnemy(id: string): EnemyConfig {

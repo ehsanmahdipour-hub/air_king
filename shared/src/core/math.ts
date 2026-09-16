@@ -26,6 +26,11 @@ export function circlesOverlap(a: Vec2, aRadius: number, b: Vec2, bRadius: numbe
   return (a.x - b.x) ** 2 + (a.y - b.y) ** 2 <= radii * radii;
 }
 
+/** Angle in radians from `from` to `to`. */
+export function angleBetween(from: Vec2, to: Vec2): number {
+  return Math.atan2(to.y - from.y, to.x - from.x);
+}
+
 export function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }

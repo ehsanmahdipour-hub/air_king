@@ -15,26 +15,39 @@ export {
   WEAPONS,
   getWeapon,
   type WeaponConfig,
+  type ProjectileSpec,
 } from './config/weapons';
 export {
-  BASIC_FIGHTER,
+  FIGHTER,
+  BOMBER,
+  MINE,
+  TURRET,
   ENEMIES,
   getEnemy,
   type EnemyConfig,
   type EnemyBehavior,
+  type EnemyBaseConfig,
+  type FighterConfig,
+  type BomberConfig,
+  type MineConfig,
+  type TurretConfig,
 } from './config/enemies';
 export { STARTER_AIRCRAFT, type PlayerConfig } from './config/player';
 export {
   TEST_LEVEL_1,
   type LevelConfig,
   type Arena,
+  type FormationType,
+  type SpawnGroup,
 } from './config/levels';
 
 // Pure game rules
-export { clamp, length, normalize, distance, circlesOverlap, randomRange } from './core/math';
+export { clamp, length, normalize, distance, circlesOverlap, angleBetween, randomRange } from './core/math';
 export { applyDamage, isDefeated } from './core/combat';
 export { addScore, scoreForKill } from './core/score';
 export { createProjectiles, type ProjectileSpawn } from './core/weapons';
+export { formationSpawnPosition, type FormationParams } from './core/formations';
+export { runEnemyBehavior, type EnemyBehaviorContext } from './core/behaviors';
 export {
   createWorld,
   stepWorld,
@@ -44,4 +57,5 @@ export {
   type PlayerState,
   type EnemyState,
   type ProjectileState,
+  type ProjectileOwner,
 } from './core/world';

@@ -1,27 +1,51 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { BOMBER, FIGHTER, MINE, TURRET } from '../config/enemies';
 import { TEST_LEVEL_1 } from '../config/levels';
-import { BASIC_FIGHTER } from '../config/enemies';
 import { STARTER_AIRCRAFT } from '../config/player';
-import { createWorld, stepWorld, type EnemyState, type InputState, type World } from './world';
+import {
+  createWorld,
+  stepWorld,
+  type EnemyState,
+  type InputState,
+  type ProjectileState,
+  type World,
+} from './world';
 
 const IDLE: InputState = { move: { x: 0, y: 0 }, firing: false };
 
 function stopSpawning(world: World): void {
-  world.enemiesSpawned = world.level.enemyCount;
+  world.spawnGroupIndex = world.level.spawns.length;
+  world.spawnTimer = Number.POSITIVE_INFINITY;
 }
 
 function makeEnemy(overrides: Partial<EnemyState> = {}): EnemyState {
   return {
     id: 900,
-    typeId: BASIC_FIGHTER.id,
+    typeId: FIGHTER.id,
     position: { x: 480, y: 200 },
-    radius: BASIC_FIGHTER.radius,
-    health: BASIC_FIGHTER.maxHealth,
-    maxHealth: BASIC_FIGHTER.maxHealth,
-    speed: BASIC_FIGHTER.speed,
-    contactDamage: BASIC_FIGHTER.contactDamage,
-    scoreValue: BASIC_FIGHTER.scoreValue,
+    radius: FIGHTER.radius,
+    health: FIGHTER.maxHealth,
+    maxHealth: FIGHTER.maxHealth,
+    speed: FIGHTER.speed,
+    contactDamage: FIGHTER.contactDamage,
+    scoreValue: FIGHTER.scoreValue,
+    age: 0,
+    fireCooldown: 0,
+    alive: true,
+    ...overrides,
+  };
+}
+
+function makeProjectile(overrides: Partial<ProjectileState> = {}): ProjectileState {
+  return {
+    id: 800,
+    owner: 'player',
+    position: { x: 480, y: 330 },
+    velocity: { x: 0, y: -720 },
+    radius: 4,
+    damage: 10,
+    lifeRemaining: 1,
     alive: true,
     ...overrides,
   };
@@ -74,7 +98,10 @@ describe('player movement', () => {
     const input: InputState = {
       move: { x: 0, y: 0 },
       firing: false,
-      mouse: { active: true, position: { x: world.player.position.x + 200, y: world.player.position.y } },
+      mouse: {
+        active: true,
+        position: { x: world.player.position.x + 200, y: world.player.position.y },
+      },
     };
     const startX = world.player.position.x;
     stepWorld(world, input, 0.05);
@@ -111,16 +138,16 @@ describe('player movement', () => {
 });
 
 describe('weapon firing', () => {
-  it('fires a projectile respecting the fire rate', () => {
+  it('fires player projectiles respecting the fire rate', () => {
     const world = createWorld();
     stopSpawning(world);
     const input: InputState = { move: { x: 0, y: 0 }, firing: true };
 
     stepWorld(world, input, 1 / 60);
     expect(world.projectiles).toHaveLength(1);
+    expect(world.projectiles[0]?.owner).toBe('player');
     expect(world.events.some((event) => event.type === 'shotFired')).toBe(true);
 
-    // Cooldown blocks immediate re-fire.
     stepWorld(world, input, 1 / 60);
     expect(world.projectiles).toHaveLength(1);
 
@@ -139,6 +166,32 @@ describe('weapon firing', () => {
   });
 });
 
+describe('projectile lifecycle', () => {
+  it('expires a projectile when its lifetime runs out', () => {
+    const world = createWorld();
+    stopSpawning(world);
+    world.projectiles.push(
+      makeProjectile({ position: { x: 480, y: 300 }, velocity: { x: 0, y: 0 }, lifeRemaining: 0.02 }),
+    );
+
+    stepWorld(world, IDLE, 0.05);
+
+    expect(world.projectiles).toHaveLength(0);
+  });
+
+  it('culls a projectile that leaves the arena', () => {
+    const world = createWorld();
+    stopSpawning(world);
+    world.projectiles.push(
+      makeProjectile({ position: { x: 480, y: 700 }, velocity: { x: 0, y: 900 }, lifeRemaining: 5 }),
+    );
+
+    stepWorld(world, IDLE, 0.05);
+
+    expect(world.projectiles).toHaveLength(0);
+  });
+});
+
 describe('collisions', () => {
   let world: World;
 
@@ -149,36 +202,60 @@ describe('collisions', () => {
 
   it('destroys an enemy, awards score and emits an event', () => {
     world.enemies.push(makeEnemy({ position: { x: 480, y: 300 }, health: 5, speed: 0 }));
-    world.projectiles.push({
-      id: 800,
-      position: { x: 480, y: 330 },
-      velocity: { x: 0, y: -720 },
-      radius: 4,
-      damage: 10,
-      alive: true,
-    });
+    world.projectiles.push(makeProjectile({ lifeRemaining: 1 }));
 
     stepWorld(world, IDLE, 0.016);
 
     expect(world.enemies).toHaveLength(0);
     expect(world.projectiles).toHaveLength(0);
-    expect(world.score).toBe(BASIC_FIGHTER.scoreValue);
+    expect(world.score).toBe(FIGHTER.scoreValue);
     expect(world.enemiesDestroyed).toBe(1);
     expect(world.events.some((event) => event.type === 'enemyDestroyed')).toBe(true);
+  });
+
+  it('emits an enemyHit event for non-lethal damage', () => {
+    world.enemies.push(
+      makeEnemy({ position: { x: 480, y: 300 }, health: FIGHTER.maxHealth, speed: 0 }),
+    );
+    world.projectiles.push(makeProjectile({ damage: 5, lifeRemaining: 1 }));
+
+    stepWorld(world, IDLE, 0.016);
+
+    expect(world.enemies).toHaveLength(1);
+    expect(world.enemies[0]?.health).toBe(FIGHTER.maxHealth - 5);
+    expect(world.events.some((event) => event.type === 'enemyHit')).toBe(true);
   });
 
   it('damages the player on contact and grants brief invulnerability', () => {
     world.enemies.push(makeEnemy({ position: { ...world.player.position }, speed: 0 }));
 
     stepWorld(world, IDLE, 0.016);
-    expect(world.player.health).toBe(STARTER_AIRCRAFT.maxHealth - BASIC_FIGHTER.contactDamage);
+    expect(world.player.health).toBe(STARTER_AIRCRAFT.maxHealth - FIGHTER.contactDamage);
     expect(world.enemies).toHaveLength(0);
     expect(world.events.some((event) => event.type === 'playerHit')).toBe(true);
 
-    // A second contact during invulnerability does not deal more damage.
     world.enemies.push(makeEnemy({ position: { ...world.player.position }, speed: 0 }));
     stepWorld(world, IDLE, 0.016);
-    expect(world.player.health).toBe(STARTER_AIRCRAFT.maxHealth - BASIC_FIGHTER.contactDamage);
+    expect(world.player.health).toBe(STARTER_AIRCRAFT.maxHealth - FIGHTER.contactDamage);
+  });
+
+  it('lets enemy projectiles damage the player', () => {
+    world.projectiles.push(
+      makeProjectile({
+        owner: 'enemy',
+        position: { ...world.player.position },
+        velocity: { x: 0, y: 0 },
+        damage: 12,
+        radius: 6,
+        lifeRemaining: 2,
+      }),
+    );
+
+    stepWorld(world, IDLE, 0.016);
+
+    expect(world.projectiles).toHaveLength(0);
+    expect(world.player.health).toBe(STARTER_AIRCRAFT.maxHealth - 12);
+    expect(world.events.some((event) => event.type === 'playerHit')).toBe(true);
   });
 
   it('does not award score for enemies destroyed by collision', () => {
@@ -187,6 +264,114 @@ describe('collisions', () => {
     stepWorld(world, IDLE, 0.016);
 
     expect(world.score).toBe(0);
+  });
+});
+
+describe('enemy behaviors', () => {
+  let world: World;
+
+  beforeEach(() => {
+    world = createWorld();
+    stopSpawning(world);
+  });
+
+  it('fighter seeks the player horizontally', () => {
+    world.player.position = { x: 600, y: 500 };
+    world.enemies.push(
+      makeEnemy({ typeId: FIGHTER.id, position: { x: 300, y: 200 }, speed: 0 }),
+    );
+
+    stepWorld(world, IDLE, 0.05);
+    const firstX = world.enemies[0].position.x;
+
+    stepWorld(world, IDLE, 0.05);
+    const secondX = world.enemies[0].position.x;
+
+    expect(firstX).toBeGreaterThan(300);
+    expect(secondX).toBeGreaterThan(firstX);
+  });
+
+  it('bomber drops a spread salvo', () => {
+    world.enemies.push(
+      makeEnemy({
+        typeId: BOMBER.id,
+        position: { x: 480, y: 200 },
+        health: BOMBER.maxHealth,
+        speed: 0,
+        age: BOMBER.fireDelay,
+      }),
+    );
+
+    stepWorld(world, IDLE, 0.05);
+
+    const enemyShots = world.projectiles.filter((projectile) => projectile.owner === 'enemy');
+    expect(enemyShots).toHaveLength(BOMBER.projectile.count);
+    expect(world.events.some((event) => event.type === 'enemyShot')).toBe(true);
+  });
+
+  it('turret descends to its anchor and then fires at the player', () => {
+    world.enemies.push(
+      makeEnemy({
+        typeId: TURRET.id,
+        position: { x: 300, y: 0 },
+        health: TURRET.maxHealth,
+        speed: TURRET.speed,
+        age: TURRET.fireDelay,
+      }),
+    );
+
+    stepWorld(world, IDLE, 0.05);
+    expect(world.enemies[0].position.y).toBeLessThan(TURRET.anchorY);
+    expect(world.projectiles.filter((p) => p.owner === 'enemy')).toHaveLength(0);
+
+    for (let step = 0; step < 60; step += 1) {
+      stepWorld(world, IDLE, 0.05);
+    }
+
+    const turretEnemy = world.enemies[0];
+    expect(turretEnemy?.position.y).toBe(TURRET.anchorY);
+    expect(world.projectiles.some((p) => p.owner === 'enemy')).toBe(true);
+  });
+
+  it('mine never fires', () => {
+    world.enemies.push(
+      makeEnemy({
+        typeId: MINE.id,
+        position: { x: 300, y: 200 },
+        health: MINE.maxHealth,
+        speed: 0,
+        age: 100,
+      }),
+    );
+
+    for (let step = 0; step < 20; step += 1) {
+      stepWorld(world, IDLE, 0.05);
+    }
+
+    expect(world.projectiles.filter((p) => p.owner === 'enemy')).toHaveLength(0);
+  });
+
+  it('handles several enemies of different types at once', () => {
+    world.enemies.push(
+      makeEnemy({ id: 1, typeId: FIGHTER.id, position: { x: 200, y: 100 }, speed: 0 }),
+      makeEnemy({ id: 2, typeId: FIGHTER.id, position: { x: 700, y: 100 }, speed: 0 }),
+      makeEnemy({
+        id: 3,
+        typeId: BOMBER.id,
+        position: { x: 480, y: 100 },
+        health: BOMBER.maxHealth,
+        speed: 0,
+        age: BOMBER.fireDelay,
+      }),
+      makeEnemy({ id: 4, typeId: MINE.id, position: { x: 600, y: 100 }, health: MINE.maxHealth, speed: 0 }),
+    );
+
+    stepWorld(world, IDLE, 0.05);
+
+    expect(world.enemies).toHaveLength(4);
+    expect(world.projectiles.filter((p) => p.owner === 'enemy')).toHaveLength(
+      BOMBER.projectile.count,
+    );
   });
 });
 
@@ -212,9 +397,12 @@ describe('player death', () => {
 });
 
 describe('enemy spawning', () => {
-  it('spawns up to the configured enemy count', () => {
+  it('spawns the configured number for a group and then stops', () => {
     const world = createWorld();
-    world.level = { ...TEST_LEVEL_1, enemyCount: 3, spawnInterval: 0.1, spawnIntervalJitter: 0 };
+    world.level = {
+      ...TEST_LEVEL_1,
+      spawns: [{ enemyTypeId: 'fighter', count: 3, formation: 'line', interval: 0.1, startDelay: 0 }],
+    };
 
     for (let step = 0; step < 40; step += 1) {
       stepWorld(world, IDLE, 0.05);
@@ -225,6 +413,25 @@ describe('enemy spawning', () => {
       stepWorld(world, IDLE, 0.05);
     }
     expect(world.enemiesSpawned).toBe(3);
+  });
+
+  it('moves through multiple spawn groups in order', () => {
+    const world = createWorld();
+    world.level = {
+      ...TEST_LEVEL_1,
+      spawns: [
+        { enemyTypeId: 'fighter', count: 2, formation: 'line', interval: 0.05, startDelay: 0 },
+        { enemyTypeId: 'mine', count: 2, formation: 'line', interval: 0.05, startDelay: 0 },
+      ],
+    };
+
+    for (let step = 0; step < 30; step += 1) {
+      stepWorld(world, IDLE, 0.05);
+    }
+
+    expect(world.enemiesSpawned).toBe(4);
+    const typeIds = world.enemies.map((enemy) => enemy.typeId);
+    expect(typeIds).toContain('mine');
   });
 
   it('culls enemies that escape past the bottom', () => {

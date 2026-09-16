@@ -1,8 +1,9 @@
-import type { GameEvent, LevelConfig, World } from '@game/shared';
+import type { LevelConfig, World } from '@game/shared';
 import Phaser from 'phaser';
 
 import { DEPTH } from '../config';
-import { TEXTURES } from '../textures';
+import { enemyTexture, TEXTURES } from '../textures';
+import { SpritePool } from './SpritePool';
 
 interface Star {
   sprite: Phaser.GameObjects.Image;
@@ -20,30 +21,22 @@ export class WorldRenderer {
   private readonly playerSprite: Phaser.GameObjects.Image;
   private readonly enemySprites = new Map<number, Phaser.GameObjects.Image>();
   private readonly projectileSprites = new Map<number, Phaser.GameObjects.Image>();
+  private readonly enemyPool: SpritePool;
+  private readonly projectilePool: SpritePool;
   private readonly stars: Star[] = [];
-  private readonly explosion: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly level: LevelConfig,
   ) {
+    this.enemyPool = new SpritePool(scene);
+    this.projectilePool = new SpritePool(scene);
+
     this.createStars();
 
     this.playerSprite = scene.add
       .image(level.playerStart.x, level.playerStart.y, TEXTURES.player)
       .setDepth(DEPTH.player);
-
-    this.explosion = scene.add
-      .particles(0, 0, TEXTURES.spark, {
-        lifespan: 420,
-        speed: { min: 60, max: 200 },
-        scale: { start: 1.1, end: 0 },
-        alpha: { start: 1, end: 0 },
-        quantity: 12,
-        blendMode: Phaser.BlendModes.ADD,
-        emitting: false,
-      })
-      .setDepth(DEPTH.effects);
   }
 
   sync(world: World): void {
@@ -57,43 +50,29 @@ export class WorldRenderer {
     this.syncProjectiles(world);
   }
 
-  playEvents(events: GameEvent[]): void {
-    for (const event of events) {
-      switch (event.type) {
-        case 'enemyDestroyed':
-          this.explosion.explode(12, event.position.x, event.position.y);
-          this.scene.cameras.main.shake(80, 0.002);
-          break;
-        case 'playerHit':
-          this.explosion.explode(8, event.position.x, event.position.y);
-          this.scene.cameras.main.shake(160, 0.006);
-          this.flashPlayer();
-          break;
-        case 'playerDestroyed':
-          this.explosion.explode(30, event.position.x, event.position.y);
-          this.scene.cameras.main.shake(300, 0.01);
-          break;
-        case 'shotFired':
-          break;
-      }
-    }
+  /** Briefly tints the player sprite when it takes a hit. */
+  flashPlayer(): void {
+    this.playerSprite.setTint(0xff9a9a);
+    this.scene.time.delayedCall(120, () => this.playerSprite.clearTint());
   }
 
-  /** Removes all dynamic sprites, e.g. when the level restarts. */
+  /** Releases all dynamic sprites back to their pools, e.g. on level restart. */
   reset(): void {
-    this.clearSprites(this.enemySprites);
-    this.clearSprites(this.projectileSprites);
+    this.releaseAll(this.enemySprites, this.enemyPool);
+    this.releaseAll(this.projectileSprites, this.projectilePool);
   }
 
   destroy(): void {
-    this.clearSprites(this.enemySprites);
-    this.clearSprites(this.projectileSprites);
+    this.reset();
+    this.enemyPool.destroy();
+    this.projectilePool.destroy();
+
     for (const star of this.stars) {
       star.sprite.destroy();
     }
     this.stars.length = 0;
+
     this.playerSprite.destroy();
-    this.explosion.destroy();
   }
 
   private createStars(): void {
@@ -126,15 +105,13 @@ export class WorldRenderer {
       seen.add(enemy.id);
       let sprite = this.enemySprites.get(enemy.id);
       if (!sprite) {
-        sprite = this.scene.add
-          .image(enemy.position.x, enemy.position.y, TEXTURES.enemy)
-          .setDepth(DEPTH.enemy);
+        sprite = this.enemyPool.acquire(enemyTexture(enemy.typeId), DEPTH.enemy);
         this.enemySprites.set(enemy.id, sprite);
       }
       sprite.setPosition(enemy.position.x, enemy.position.y);
     }
 
-    this.removeMissing(this.enemySprites, seen);
+    this.removeMissing(this.enemySprites, seen, this.enemyPool);
   }
 
   private syncProjectiles(world: World): void {
@@ -142,41 +119,42 @@ export class WorldRenderer {
 
     for (const projectile of world.projectiles) {
       seen.add(projectile.id);
+      const texture =
+        projectile.owner === 'player' ? TEXTURES.playerBullet : TEXTURES.enemyBullet;
+
       let sprite = this.projectileSprites.get(projectile.id);
       if (!sprite) {
-        sprite = this.scene.add
-          .image(projectile.position.x, projectile.position.y, TEXTURES.bullet)
-          .setDepth(DEPTH.projectile);
+        sprite = this.projectilePool.acquire(texture, DEPTH.projectile);
         this.projectileSprites.set(projectile.id, sprite);
       }
+      sprite.setTexture(texture);
       sprite.setPosition(projectile.position.x, projectile.position.y);
       sprite.setRotation(Math.atan2(projectile.velocity.y, projectile.velocity.x) + Math.PI / 2);
     }
 
-    this.removeMissing(this.projectileSprites, seen);
+    this.removeMissing(this.projectileSprites, seen, this.projectilePool);
   }
 
   private removeMissing(
     sprites: Map<number, Phaser.GameObjects.Image>,
     seen: Set<number>,
+    pool: SpritePool,
   ): void {
     for (const [id, sprite] of sprites) {
       if (!seen.has(id)) {
-        sprite.destroy();
+        pool.release(sprite);
         sprites.delete(id);
       }
     }
   }
 
-  private clearSprites(sprites: Map<number, Phaser.GameObjects.Image>): void {
+  private releaseAll(
+    sprites: Map<number, Phaser.GameObjects.Image>,
+    pool: SpritePool,
+  ): void {
     for (const sprite of sprites.values()) {
-      sprite.destroy();
+      pool.release(sprite);
     }
     sprites.clear();
-  }
-
-  private flashPlayer(): void {
-    this.playerSprite.setTint(0xff9a9a);
-    this.scene.time.delayedCall(120, () => this.playerSprite.clearTint());
   }
 }

@@ -105,3 +105,39 @@ with real sprites later touches one module and no gameplay code.
 change, not an engine change. The `WeaponConfig` already carries count and
 spread, and `EnemyConfig` carries a `behavior` discriminator, so future phases
 extend data plus small strategy functions rather than rewriting the loop.
+
+## ADR-0014: Modular enemy behaviors behind a registry
+
+**Decision.** Enemy configs are a discriminated union on `behavior`, and each
+behavior is a small module registered in `core/behaviors/index.ts`. Behaviors
+receive an `EnemyBehaviorContext` and announce shots through a `fire` callback.
+**Why.** It satisfies "no giant enemy class": adding an enemy is a config entry,
+and adding a behavior is one module plus a registry case that the compiler
+checks exhaustively. Behaviors cannot reach into world internals, keeping them
+easy to test and reason about.
+
+## ADR-0015: One projectile/weapon spec for players and enemies
+
+**Decision.** A single `ProjectileSpec` (damage, speed, radius, lifetime, count,
+spread) plus one `createProjectiles(origin, spec, angle)` function serves both
+player weapons and enemy weapons.
+**Why.** Removes duplicate firing logic and makes new weapons data-only. Aiming
+is just a base angle, so turrets/fighters aim at the player while bombers fire
+straight down without special cases.
+
+## ADR-0016: Pooled sprites and in-place entity compaction
+
+**Decision.** The renderer reuses Phaser `Image` objects through `SpritePool`,
+and the simulation compacts dead entities in place instead of reallocating
+arrays each step.
+**Why.** Keeps per-frame allocation and GC pressure low during heavy combat
+without adding a complex object pool to the pure simulation. Verified in-browser
+that display-list size stays stable over a long session.
+
+## ADR-0017: Shared particle emitters for effects
+
+**Decision.** Explosion, impact, hit and muzzle effects use four long-lived
+particle emitters triggered with `explode`, owned by `client/src/game/render/Effects.ts`.
+**Why.** Effects add no per-hit allocation and stay out of the simulation; the
+simulation only emits events, and `GameScene` maps them to effects and camera
+shake.
