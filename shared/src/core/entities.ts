@@ -1,7 +1,12 @@
-import type { LevelConfig } from '../config/levels';
+import type { EnemyConfig } from '../config/enemies';
+import type { DifficultyModifiers, LevelConfig } from '../config/levels';
 import type { GameEvent, Vec2 } from '../types';
 
-export type GameStatus = 'running' | 'gameover';
+/**
+ * Level lifecycle. `ready` is the level-start countdown, `playing` the active
+ * level, and `levelComplete` / `gameover` the terminal states.
+ */
+export type GameStatus = 'ready' | 'playing' | 'levelComplete' | 'gameover';
 
 export type ProjectileOwner = 'player' | 'enemy';
 
@@ -19,6 +24,8 @@ export interface PlayerState {
 export interface EnemyState {
   id: number;
   typeId: string;
+  /** Effective config, including any difficulty scaling applied at spawn. */
+  config: EnemyConfig;
   position: Vec2;
   radius: number;
   health: number;
@@ -54,24 +61,37 @@ export interface InputState {
   mouse?: { active: boolean; position: Vec2 };
 }
 
+/** Spawn and completion bookkeeping owned by the level director. */
+export interface DirectorState {
+  /** Seconds remaining in the `ready` countdown. */
+  startTimer: number;
+  waveIndex: number;
+  groupIndex: number;
+  groupSpawnCount: number;
+  spawnTimer: number;
+  obstacleIndex: number;
+  obstacleSpawnCount: number;
+  obstacleTimer: number;
+  /** Total enemies authored across all waves (per cycle for looping levels). */
+  totalEnemies: number;
+  enemiesSpawned: number;
+  enemiesDestroyed: number;
+}
+
 export interface World {
   status: GameStatus;
   elapsed: number;
-  /** Total forward distance travelled, used to scroll the environment. */
+  /** Total forward distance travelled, used to scroll and to complete levels. */
   distance: number;
   score: number;
   level: LevelConfig;
+  /** Difficulty scaling resolved from the level tier, applied at spawn. */
+  difficultyModifiers: DifficultyModifiers;
   player: PlayerState;
   enemies: EnemyState[];
   projectiles: ProjectileState[];
   /** Events produced during the last step, consumed by the presentation layer. */
   events: GameEvent[];
   nextId: number;
-  /** Index of the spawn group currently being emitted. */
-  spawnGroupIndex: number;
-  /** Enemies already spawned within the current group. */
-  spawnGroupCount: number;
-  spawnTimer: number;
-  enemiesSpawned: number;
-  enemiesDestroyed: number;
+  director: DirectorState;
 }

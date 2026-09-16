@@ -7,6 +7,8 @@ export interface Vec2 {
 
 /** Events emitted by the simulation for the presentation layer to react to. */
 export type GameEvent =
+  | { type: 'levelStart'; position: Vec2 }
+  | { type: 'levelComplete'; position: Vec2; score: number }
   | { type: 'shotFired'; position: Vec2 }
   | { type: 'enemyShot'; position: Vec2 }
   | { type: 'enemyHit'; position: Vec2; damage: number }

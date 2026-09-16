@@ -107,6 +107,6 @@ function destroyEnemy(world: World, enemy: EnemyState): void {
   enemy.alive = false;
   const gained = scoreForKill(enemy);
   world.score = addScore(world.score, gained);
-  world.enemiesDestroyed += 1;
+  world.director.enemiesDestroyed += 1;
   world.events.push({ type: 'enemyDestroyed', position: { ...enemy.position }, score: gained });
 }

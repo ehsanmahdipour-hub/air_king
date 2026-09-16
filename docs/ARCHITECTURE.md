@@ -49,19 +49,23 @@ The core is a deterministic, fixed-step simulation in `shared/src/core` that is
 completely free of Phaser, DOM and network code:
 
 - `entities.ts` — `World` and per-entity state (`PlayerState`, `EnemyState`,
-  `ProjectileState`, `InputState`).
+  `ProjectileState`, `InputState`, `DirectorState`).
 - `world.ts` — `createWorld` / `stepWorld`; wires the systems together.
 - `systems/` — focused update systems (player movement, player weapon,
-  projectiles, spawning, enemies, collisions).
+  projectiles, enemies, collisions).
+- `levelDirector.ts` — wave/obstacle spawning and level completion.
+- `difficulty.ts` — applies difficulty modifiers to enemy configs.
 - `behaviors/` — one module per enemy behavior plus a registry (`runEnemyBehavior`).
-- `weapons.ts`, `formations.ts`, `combat.ts`, `score.ts`, `math.ts` — small pure
-  rule modules.
-- `config/` — player, enemy, weapon and level data (`shared/src/config`).
+- `weapons.ts`, `formations.ts`, `progression.ts`, `combat.ts`, `score.ts`, `math.ts`
+  — small pure rule modules.
+- `config/levels/` — level data model, validation, environments, difficulty
+  presets and the authored levels (`shared/src/config/levels`).
 
 `stepWorld(world, input, delta)` mutates the world, compacts dead entities in
-place, and appends `GameEvent`s (shot fired, enemy shot/hit/destroyed, player
-hit/destroyed) which the presentation layer consumes for effects. Rendering,
-input, effects and gameplay rules stay independently testable and replaceable.
+place, and appends `GameEvent`s (level start/complete, shot fired, enemy
+shot/hit/destroyed, player hit/destroyed) which the presentation layer consumes
+for effects. Rendering, input, effects and gameplay rules stay independently
+testable and replaceable.
 
 ### Modular enemies and weapons
 
@@ -74,31 +78,50 @@ input, effects and gameplay rules stay independently testable and replaceable.
 - Projectiles and weapons share one `ProjectileSpec` (damage, speed, radius,
   lifetime, count, spread). Player weapons and enemy weapons use the same
   `createProjectiles` function, so new weapons are data.
-- Levels are an ordered list of `SpawnGroup`s with formations
-  (`random`/`line`/`v`/`column`); `formations.ts` maps a group index to a spawn
-  position.
+
+### Level system
+
+- A level is pure data: `id`, `levelNumber`, `name`, `difficulty`, `environment`,
+  `arena`, `scrollSpeed`, `startDelaySeconds`, `completionMode`
+  (`clear-waves` | `reach-distance`), optional `lengthUnits`/`loopWaves`, ordered
+  `waves` (each a list of `SpawnGroup`s with formations), parallel
+  `obstacleSections`, an optional `boss` reference, and `reward`.
+- Levels live in `config/levels/level-XX.ts` and are registered in
+  `config/levels/index.ts`, where each is validated with Zod and semantic checks
+  (`parseLevelConfig`). Adding a level is a data file plus a registry entry.
+- The `levelDirector` runs waves sequentially and obstacle sections on a parallel
+  timeline, and reports completion (`isLevelCleared`) for both completion modes.
+  `stepWorld` owns the lifecycle `ready → playing → levelComplete | gameover`.
+- Difficulty is a tier (`easy`/`normal`/`hard`/`expert`) resolved to
+  `DifficultyModifiers` (enemy speed, fire cadence, projectile speed) and applied
+  to enemy configs at spawn — never by inflating health.
+- `progression.ts` provides `isLevelUnlocked` (sequential) and `getNextLevelId`;
+  the client tracks completions in memory until persistence arrives in Phase 7.
 
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
-- `render/WorldRenderer.ts` — world state → sprites, background scroll.
+- `render/WorldRenderer.ts` — world state → sprites, background scroll, environment.
 - `render/Effects.ts` — shared particle emitters for explosion/impact/hit/muzzle.
 - `render/SpritePool.ts` — reuses `Image` objects to avoid per-frame allocation.
-- `ui/Hud.ts` — health, score, level, game-over overlay.
-- `scenes/GameScene.ts` — timing loop wiring, event → effect mapping, restart.
+- `ui/Hud.ts` — health, score, level, progress bar and state overlays.
+- `scenes/GameScene.ts` — timing loop wiring, level loading, event → effect
+  mapping, restart / next-level handling.
 - `textures.ts` — procedurally generated placeholder sprites per enemy type.
 
 Rendering depth is faked on a flat 2D gameplay plane via a scrolling starfield
-whose per-star parallax and scale suggest distance.
+whose per-star parallax and scale suggest distance; each environment sets the
+background colour and star tint.
 
 ## Current phase
 
-Phase 4 adds the modular combat system: a player weapon architecture, four enemy
-types (fighter, bomber, mine, turret) with pluggable behaviors, enemy
-projectiles, spawn formations, damage/death, reusable effects and sprite
-pooling. Phase 3 built the core gameplay prototype, Phase 2 authentication and
-Phase 1 the project skeleton; remaining systems (levels, progression, bosses)
-are implemented in later phases.
+Phase 5 replaces the single hard-coded level with a data-driven level system:
+a validated level model, a level director (waves, obstacle sections, completion
+and failure), configurable difficulty tiers, environments and progressive
+unlocking, validated with five authored levels. Phase 4 added the combat/enemy
+system, Phase 3 the core gameplay prototype, Phase 2 authentication and Phase 1
+the project skeleton; score/reward persistence, upgrades, aircraft and bosses
+arrive in later phases.
 
 
 ## Server authority and trust model

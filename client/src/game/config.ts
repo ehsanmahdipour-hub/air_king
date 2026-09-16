@@ -1,10 +1,11 @@
-import { TEST_LEVEL_1 } from '@game/shared';
+import { LEVELS, type LevelConfig } from '@game/shared';
 
-/** The level used by the prototype. Kept in one place for the client. */
-export const LEVEL = TEST_LEVEL_1;
+/** Campaign levels in order. */
+export const CAMPAIGN: LevelConfig[] = LEVELS;
 
-export const GAME_WIDTH = LEVEL.arena.width;
-export const GAME_HEIGHT = LEVEL.arena.height;
+/** All test levels share the same arena, so one size drives the Phaser canvas. */
+export const GAME_WIDTH = LEVELS[0].arena.width;
+export const GAME_HEIGHT = LEVELS[0].arena.height;
 
 /** Render ordering. Gameplay never depends on these values. */
 export const DEPTH = {

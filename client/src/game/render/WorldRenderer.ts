@@ -32,6 +32,7 @@ export class WorldRenderer {
     this.enemyPool = new SpritePool(scene);
     this.projectilePool = new SpritePool(scene);
 
+    scene.cameras.main.setBackgroundColor(level.environment.backgroundColor);
     this.createStars();
 
     this.playerSprite = scene.add
@@ -84,6 +85,7 @@ export class WorldRenderer {
         .image(Phaser.Math.Between(0, width), Phaser.Math.Between(0, height), TEXTURES.star)
         .setScale(parallax)
         .setAlpha(0.25 + (parallax / 1.2) * 0.6)
+        .setTint(this.level.environment.starTint)
         .setDepth(DEPTH.background);
 
       this.stars.push({ sprite, baseY: sprite.y, parallax });

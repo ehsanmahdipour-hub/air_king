@@ -5,10 +5,10 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 4 — Combat & Enemy System.** Account auth plus a playable level
-> with four modular enemy types (fighter, bomber, mine, turret), enemy
-> projectiles, formations and combat effects. Later phases add levels,
-> progression and bosses.
+> Status: **Phase 5 — Level System.** Account auth plus five data-driven,
+> progressively unlocked levels with waves, formations, obstacle sections,
+> difficulty tiers and completion/failure states. Later phases add score/reward
+> persistence, upgrades, aircraft and bosses.
 
 ## Overview
 
@@ -40,7 +40,8 @@ See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the rationale behind each choic
 | --- | --- |
 | Move | `W` `A` `S` `D` or move the mouse (the aircraft follows the pointer) |
 | Fire | `Space` or left mouse button |
-| Restart (on game over) | `R` |
+| Next level (on level complete) | `N` |
+| Replay level / restart (on game over) | `R` |
 
 The last movement device used takes over: pressing WASD switches to keyboard
 control, moving the mouse switches back. Mouse control needs no clicking.

@@ -66,11 +66,27 @@ increment, tested, reviewed and merged before the next begins.
 - Verified in a real browser (all enemy types, simultaneous enemies, player and
   enemy projectiles, player damage, effects) with stable object counts.
 
-## Phase 5 preview (next, pending approval)
+## Phase 5 acceptance criteria (complete)
 
-Level system: a full level data model and loader, phased spawn timelines,
-difficulty scaling, level completion/failure and unlocking, plus enough sample
-levels to validate the system before authoring 50.
+- Data-driven, validated level model (id, number, difficulty, environment,
+  scroll speed, start delay, completion mode, waves, obstacle sections, boss
+  slot, reward).
+- Level director: sequential waves with formations, parallel obstacle sections,
+  and completion/failure detection.
+- Configurable difficulty tiers that change speed, fire cadence and projectile
+  speed (never health).
+- Level states: `ready` (level start), `playing`, `levelComplete`, `gameover`.
+- Progressive unlocking model (`isLevelUnlocked`, `getNextLevelId`).
+- Five authored test levels across three environments and the `clear-waves` and
+  `reach-distance` completion modes.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified in a real browser: all five levels play and complete, restart,
+  next-level transition, unlocking and failure all behave correctly.
+
+## Phase 6 preview (next, pending approval)
+
+Score & reward: score sources, coin conversion via the central economy config,
+completion bonuses and an end-of-level reward screen.
 
 
 

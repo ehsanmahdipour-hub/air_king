@@ -20,8 +20,8 @@ export function App() {
       </main>
 
       <footer className="app__footer">
-        Phase 3 — core gameplay prototype · move with WASD or the mouse · fire with Space or
-        click · press R to restart
+        Phase 5 — level system · move with WASD or the mouse · fire with Space or click · press R
+        to replay · press N for the next level when complete
       </footer>
     </div>
   );

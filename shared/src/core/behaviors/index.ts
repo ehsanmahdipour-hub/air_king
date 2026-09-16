@@ -1,4 +1,3 @@
-import { getEnemy } from '../../config/enemies';
 import { runBomber } from './bomber';
 import { runFighter } from './fighter';
 import { runMine } from './mine';
@@ -8,12 +7,14 @@ import type { EnemyBehaviorContext } from './types';
 export type { EnemyBehaviorContext } from './types';
 
 /**
- * Behavior registry. The switch narrows the config union, so each behavior
- * receives its exact config type and adding a behavior is a compile-checked
- * addition here rather than an engine change.
+ * Behavior registry. Each enemy carries its effective config (difficulty
+ * applied at spawn), so no registry lookup is needed per frame. The switch
+ * narrows the config union, so each behavior receives its exact config type and
+ * adding a behavior is a compile-checked addition here rather than an engine
+ * change.
  */
 export function runEnemyBehavior(context: EnemyBehaviorContext): void {
-  const config = getEnemy(context.enemy.typeId);
+  const config = context.enemy.config;
 
   switch (config.behavior) {
     case 'fighter':

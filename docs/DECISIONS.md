@@ -141,3 +141,46 @@ particle emitters triggered with `explode`, owned by `client/src/game/render/Eff
 **Why.** Effects add no per-hit allocation and stay out of the simulation; the
 simulation only emits events, and `GameScene` maps them to effects and camera
 shake.
+
+## ADR-0018: Validated level data model with a registry
+
+**Decision.** Levels are pure data in `config/levels/level-XX.ts`, validated with
+Zod plus semantic checks (`parseLevelConfig`) and registered in
+`config/levels/index.ts`. The model covers id, number, name, difficulty,
+environment, arena, scroll speed, start delay, completion mode, waves,
+obstacle sections, an optional boss reference and reward.
+**Why.** The requirement is that 50 levels be added as data without touching
+gameplay. A validated registry gives that, fails fast on malformed content, and
+keeps the level format explicit. The boss field is present but unused until the
+boss phase.
+
+## ADR-0019: Level director with sequential waves and parallel obstacle sections
+
+**Decision.** `core/levelDirector.ts` runs waves one after another (each wave a
+list of spawn groups) and obstacle sections on an independent parallel timeline.
+Completion is one of `clear-waves` (all waves/obstacles spawned and no enemies
+left) or `reach-distance` (distance goal, with optional looping waves for
+survival levels).
+**Why.** Sequential waves give predictable pacing; a separate obstacle channel
+lets environmental hazards overlap combat without contorting the wave data.
+Two completion modes cover both "clear the level" and "survive the level" without
+special-casing content.
+
+## ADR-0020: Difficulty changes behaviour, not health
+
+**Decision.** Difficulty is a tier resolved to `DifficultyModifiers` (enemy
+speed, fire cadence, projectile speed) and applied to an enemy's config at spawn.
+Enemy counts, combinations, formations and timing are authored per level/data.
+Health is never scaled by difficulty.
+**Why.** Inflating health only lengthens fights; varying speed, projectile
+density, combinations and formations changes how the game is played. Each enemy
+carries its effective config, so behaviors need no per-frame registry lookup and
+difficulty scaling stays in one function.
+
+## ADR-0021: Sequential unlock model
+
+**Decision.** `core/progression.ts` exposes `isLevelUnlocked(levelId,
+completedLevelIds)` plus `getNextLevelId`, unlocking levels in campaign order.
+**Why.** Progressively unlocking levels is a progression rule, not persistence;
+keeping it pure lets the client use it now and the backend reuse it when progress
+is stored in Phase 7.

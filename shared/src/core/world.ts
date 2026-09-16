@@ -1,17 +1,19 @@
-import { TEST_LEVEL_1, type LevelConfig } from '../config/levels';
+import { LEVELS, difficultyModifiers, type LevelConfig } from '../config/levels';
 import { STARTER_AIRCRAFT } from '../config/player';
 import { isDefeated } from './combat';
 import { MAX_STEP_SECONDS } from './constants';
 import type { InputState, World } from './entities';
+import { createDirectorState, isLevelCleared, updateSpawns } from './levelDirector';
 import { clamp } from './math';
+import { addScore } from './score';
 import { resolveCollisions } from './systems/collisions';
 import { updateEnemies } from './systems/enemies';
 import { updatePlayer } from './systems/player';
 import { updatePlayerWeapon } from './systems/playerWeapon';
 import { updateProjectiles } from './systems/projectiles';
-import { updateSpawning } from './systems/spawning';
 
 export type {
+  DirectorState,
   EnemyState,
   GameStatus,
   InputState,
@@ -21,16 +23,16 @@ export type {
   World,
 } from './entities';
 
-export function createWorld(level: LevelConfig = TEST_LEVEL_1): World {
-  const firstGroup = level.spawns[0];
+export function createWorld(level: LevelConfig = LEVELS[0]): World {
   const playerConfig = STARTER_AIRCRAFT;
 
   return {
-    status: 'running',
+    status: 'ready',
     elapsed: 0,
     distance: 0,
     score: 0,
     level,
+    difficultyModifiers: difficultyModifiers(level.difficulty),
     player: {
       position: { ...level.playerStart },
       radius: playerConfig.radius,
@@ -43,11 +45,7 @@ export function createWorld(level: LevelConfig = TEST_LEVEL_1): World {
     projectiles: [],
     events: [],
     nextId: 1,
-    spawnGroupIndex: 0,
-    spawnGroupCount: 0,
-    spawnTimer: firstGroup ? firstGroup.startDelay : Number.POSITIVE_INFINITY,
-    enemiesSpawned: 0,
-    enemiesDestroyed: 0,
+    director: createDirectorState(level),
   };
 }
 
@@ -55,9 +53,12 @@ export function createWorld(level: LevelConfig = TEST_LEVEL_1): World {
  * Advances the simulation by one step. The world is mutated in place for
  * performance; `events` is cleared and repopulated each step and dead entities
  * are compacted in place by the systems.
+ *
+ * Lifecycle: `ready` (start countdown) → `playing` → `levelComplete` or
+ * `gameover`. Terminal states stop simulating.
  */
 export function stepWorld(world: World, input: InputState, deltaSeconds: number): void {
-  if (world.status !== 'running') {
+  if (world.status === 'levelComplete' || world.status === 'gameover') {
     return;
   }
 
@@ -66,10 +67,22 @@ export function stepWorld(world: World, input: InputState, deltaSeconds: number)
   world.elapsed += delta;
   world.distance += world.level.scrollSpeed * delta;
 
+  if (world.status === 'ready') {
+    updatePlayer(world, input, delta);
+    world.director.startTimer -= delta;
+
+    if (world.director.startTimer <= 0) {
+      world.director.startTimer = 0;
+      world.status = 'playing';
+      world.events.push({ type: 'levelStart', position: { ...world.player.position } });
+    }
+    return;
+  }
+
   updatePlayer(world, input, delta);
   updatePlayerWeapon(world, input, delta);
   updateProjectiles(world, delta);
-  updateSpawning(world, delta);
+  updateSpawns(world, delta);
   updateEnemies(world, delta);
   resolveCollisions(world);
 
@@ -77,5 +90,16 @@ export function stepWorld(world: World, input: InputState, deltaSeconds: number)
     world.player.health = 0;
     world.status = 'gameover';
     world.events.push({ type: 'playerDestroyed', position: { ...world.player.position } });
+    return;
+  }
+
+  if (isLevelCleared(world)) {
+    world.score = addScore(world.score, world.level.reward.completionBonus);
+    world.status = 'levelComplete';
+    world.events.push({
+      type: 'levelComplete',
+      position: { ...world.player.position },
+      score: world.score,
+    });
   }
 }

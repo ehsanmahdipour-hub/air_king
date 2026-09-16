@@ -33,12 +33,34 @@ export {
   type TurretConfig,
 } from './config/enemies';
 export { STARTER_AIRCRAFT, type PlayerConfig } from './config/player';
+
+// Level data (configuration + validation)
 export {
-  TEST_LEVEL_1,
+  LEVELS,
+  levelCount,
+  getLevel,
+  getLevelByNumber,
+  getLevelIndex,
+  getNextLevelId,
+  ENVIRONMENTS,
+  DIFFICULTY_PRESETS,
+  difficultyModifiers,
+  levelConfigSchema,
+  parseLevelConfig,
+  assertLevelSemantics,
   type LevelConfig,
+  type LevelRewardConfig,
+  type WaveConfig,
+  type SpawnGroup,
+  type ObstacleSection,
+  type EnvironmentConfig,
+  type EnvironmentId,
   type Arena,
   type FormationType,
-  type SpawnGroup,
+  type DifficultyTier,
+  type DifficultyModifiers,
+  type CompletionMode,
+  type BossReference,
 } from './config/levels';
 
 // Pure game rules
@@ -47,12 +69,20 @@ export { applyDamage, isDefeated } from './core/combat';
 export { addScore, scoreForKill } from './core/score';
 export { createProjectiles, type ProjectileSpawn } from './core/weapons';
 export { formationSpawnPosition, type FormationParams } from './core/formations';
+export { applyDifficulty } from './core/difficulty';
 export { runEnemyBehavior, type EnemyBehaviorContext } from './core/behaviors';
+export {
+  createDirectorState,
+  updateSpawns,
+  isLevelCleared,
+} from './core/levelDirector';
+export { isLevelUnlocked } from './core/progression';
 export {
   createWorld,
   stepWorld,
   type GameStatus,
   type World,
+  type DirectorState,
   type InputState,
   type PlayerState,
   type EnemyState,
