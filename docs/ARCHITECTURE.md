@@ -81,9 +81,28 @@ Per-user state (in the database): user credentials, refresh tokens, player
 profile (coins, current level, scores, equipped aircraft, settings), level
 progress, owned aircraft, upgrade levels.
 
+## Authentication
+
+- **Passwords** are hashed with Argon2id (19 MiB, 2 iterations). Only the hash is
+  stored; passwords and hashes are never returned by any endpoint.
+- **Access token**: short-lived JWT (HS256, `JWT_SECRET`), sent by the client as
+  `Authorization: Bearer <token>` and held in memory only.
+- **Refresh token**: opaque random value delivered as an `httpOnly`, `SameSite=Lax`
+  cookie scoped to `/api/v1/auth` (`Secure` in production). Only its SHA-256 hash
+  is stored, and it is rotated on every refresh. Reuse of a rotated token revokes
+  all of that user's active sessions.
+- **Authorization**: protected routes use the `requireAuth` preHandler, which
+  attaches `request.authUser`. Ownership checks use the token subject, never
+  client-supplied ids.
+- **Error handling**: `AppError` and `ZodError` are mapped by a central Fastify
+  error handler to structured, non-leaking responses.
+
 ## Current phase
 
-Phase 1 delivers the skeleton only: Vite + React + Phaser boot, Fastify `/health`
-and `/health/db`, Prisma + SQLite connectivity, one shared Zod schema, and a pure
-`calculateCoins` helper with tests. Gameplay architecture above describes the
-target and is implemented incrementally.
+Phase 2 adds authentication: `User`/`RefreshToken` models, Argon2id hashing,
+JWT access tokens with rotating refresh cookies, `/api/v1/auth/*` routes, a
+protected `/api/v1/auth/me` route, and frontend auth state with login/register
+UI. Phase 1 delivered the skeleton (client/server boot, DB connectivity, shared
+config). Gameplay architecture above describes the target and is implemented
+incrementally.
+

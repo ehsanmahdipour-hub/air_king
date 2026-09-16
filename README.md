@@ -5,8 +5,8 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 1 — Project Foundation.** The game engine boots, the API
-> responds, and the database is wired. Gameplay arrives in later phases.
+> Status: **Phase 2 — Authentication.** Accounts, login/logout and persisted
+> sessions work end to end. Gameplay arrives in later phases.
 
 ## Overview
 
@@ -107,6 +107,34 @@ pnpm --filter @game/server dev
 | `PORT` | `3001` | API server port |
 | `HOST` | `0.0.0.0` | API bind address |
 | `NODE_ENV` | `development` | Runtime environment |
+| `JWT_SECRET` | – (required) | Signing secret for access tokens, min 32 chars |
+| `ACCESS_TOKEN_TTL` | `15m` | Access token lifetime |
+| `REFRESH_TOKEN_TTL_DAYS` | `30` | Refresh token/cookie lifetime in days |
+
+Generate a strong `JWT_SECRET`, for example:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+## API
+
+All endpoints are under `/api/v1`. JSON request/response bodies. Authentication
+uses a short-lived access token (`Authorization: Bearer <token>`) plus an
+httpOnly refresh cookie.
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/register` | – | Create an account, returns access token + user |
+| `POST` | `/api/v1/auth/login` | – | Log in, returns access token + user |
+| `POST` | `/api/v1/auth/refresh` | cookie | Rotate refresh token, returns new access token |
+| `POST` | `/api/v1/auth/logout` | cookie | Revoke refresh token and clear cookie |
+| `GET` | `/api/v1/auth/me` | Bearer | Return the authenticated user |
+| `GET` | `/api/health` | – | Server health |
+| `GET` | `/api/health/db` | – | Database connectivity |
+
+Passwords are hashed with Argon2id and never returned by any endpoint.
+
 
 ## Testing
 
@@ -128,4 +156,4 @@ pnpm build       # production builds
 ## Development roadmap
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full phase plan. Current phase:
-**Phase 1 — Foundation**.
+**Phase 2 — Authentication** (complete).

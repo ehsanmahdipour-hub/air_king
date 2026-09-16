@@ -13,10 +13,13 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@fastify/cookie": "^9.4.0",
     "@game/shared": "workspace:*",
+    "@node-rs/argon2": "^1.8.3",
     "@prisma/client": "^5.19.1",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
+    "jose": "^5.9.6",
     "zod": "^3.23.8"
   },
   "devDependencies": {

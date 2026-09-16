@@ -1,5 +1,9 @@
+import cookie from '@fastify/cookie';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { ZodError } from 'zod';
 
+import { authRoutes } from './auth/routes';
+import { AppError } from './errors';
 import { healthRoutes } from './routes/health';
 
 export interface BuildAppOptions {
@@ -15,7 +19,32 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     logger: options.logger ?? true,
   });
 
+  await app.register(cookie);
+
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AppError) {
+      return reply.code(error.statusCode).send({ error: error.code, message: error.message });
+    }
+
+    if (error instanceof ZodError) {
+      return reply.code(400).send({
+        error: 'validation_error',
+        message: 'Invalid request data',
+        issues: error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        })),
+      });
+    }
+
+    request.log.error(error, 'unhandled request error');
+    return reply
+      .code(500)
+      .send({ error: 'internal_error', message: 'An unexpected error occurred' });
+  });
+
   await app.register(healthRoutes);
+  await app.register(authRoutes);
 
   return app;
 }

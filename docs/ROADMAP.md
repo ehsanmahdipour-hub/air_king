@@ -28,8 +28,19 @@ increment, tested, reviewed and merged before the next begins.
 - `GET /api/health/db` confirms SQLite connectivity after `pnpm db:push`.
 - `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
 
-## Phase 2 preview (next, pending approval)
+## Phase 2 acceptance criteria (complete)
 
-Authentication: `User` model, Argon2id password hashing, short-lived JWT access
-token plus rotating `httpOnly` refresh cookie, `/api/v1/auth/*` routes,
-registration/login/logout/me, protected routes, and backend auth tests.
+- `User` and `RefreshToken` models in Prisma; schema pushed.
+- Registration, login, logout and token refresh implemented under `/api/v1/auth`.
+- Passwords hashed with Argon2id; never stored or returned in plaintext.
+- Password policy enforced (8-72 chars, at least one letter and one number).
+- Protected route `/api/v1/auth/me` requires a valid access token.
+- Frontend auth state (`AuthProvider`) with login/register form and session restore.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+
+## Phase 3 preview (next, pending approval)
+
+Core gameplay prototype: player aircraft, automatic forward movement, WASD and
+mouse control, shooting, basic collision, one enemy type, health, death and one
+playable level.
+

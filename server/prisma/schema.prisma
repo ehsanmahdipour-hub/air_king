@@ -1,6 +1,6 @@
 // Prisma schema for the air combat game.
-// Phase 1 only defines a diagnostics table used to verify database
-// connectivity. Player, auth and progression models are added in later phases.
+// Phase 1 defined a diagnostics table used to verify database connectivity.
+// Phase 2 adds authentication models (User, RefreshToken).
 
 generator client {
   provider = "prisma-client-js"
@@ -14,4 +14,27 @@ datasource db {
 model HealthCheck {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  username     String         @unique
+  passwordHash String
+  role         String         @default("player")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

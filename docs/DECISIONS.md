@@ -52,3 +52,27 @@ catalog lets the client render content and the server validate it authoritativel
 **Why.** The development machine initially had no package manager. pnpm was
 installed via the standalone installer. Node 18 was already present; upgrading is
 recommended but not blocking for the foundation phase.
+
+## ADR-0008: Access token + rotating refresh cookie
+
+**Decision.** Short-lived JWT access tokens (in memory) plus an opaque, hashed,
+rotating refresh token in an httpOnly cookie.
+**Why.** The access token keeps protected requests stateless and fast; the
+refresh cookie survives reloads without exposing the token to JavaScript.
+Rotation with reuse detection limits the damage of a stolen refresh token. A
+single opaque session cookie was considered but loses the ability to scope a
+short-lived bearer credential to API calls.
+
+## ADR-0009: @node-rs/argon2 for password hashing
+
+**Decision.** Hash passwords with `@node-rs/argon2` (Argon2id).
+**Why.** Argon2id is the current recommendation for password storage. The Rust
+binding ships prebuilt binaries (no compiler toolchain needed) and is fast,
+unlike pure-JS alternatives. The plaintext and its hash never leave the server.
+
+## ADR-0010: Dedicated SQLite database for integration tests
+
+**Decision.** Auth tests run against a separate `test.db`, reset via
+`prisma db push --force-reset` in Vitest global setup.
+**Why.** Tests exercise real Prisma queries and unique constraints instead of
+mocks, while staying isolated from the development database and reproducible.

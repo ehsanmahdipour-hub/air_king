@@ -1,18 +1,12 @@
-import 'dotenv/config';
-
 import { buildApp } from './app';
+import { env } from './config/env';
 import { prisma } from './db/prisma';
 
-const DEFAULT_PORT = 3001;
-
 async function start(): Promise<void> {
-  const port = Number(process.env.PORT ?? DEFAULT_PORT);
-  const host = process.env.HOST ?? '0.0.0.0';
-
   const app = await buildApp();
 
   try {
-    await app.listen({ port, host });
+    await app.listen({ port: env.PORT, host: env.HOST });
   } catch (error) {
     app.log.error(error, 'failed to start server');
     await prisma.$disconnect();
