@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 
-import { StarfieldScene } from './scenes/StarfieldScene';
+import { GAME_HEIGHT, GAME_WIDTH } from './config';
+import { GameScene } from './scenes/GameScene';
 
 export function createGame(parent: HTMLElement): Phaser.Game {
   return new Phaser.Game({
@@ -8,11 +9,11 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     parent,
     backgroundColor: '#05070f',
     scale: {
-      mode: Phaser.Scale.RESIZE,
+      mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: '100%',
-      height: '100%',
+      width: GAME_WIDTH,
+      height: GAME_HEIGHT,
     },
-    scene: [StarfieldScene],
+    scene: [GameScene],
   });
 }

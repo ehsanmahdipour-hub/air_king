@@ -76,3 +76,32 @@ unlike pure-JS alternatives. The plaintext and its hash never leave the server.
 `prisma db push --force-reset` in Vitest global setup.
 **Why.** Tests exercise real Prisma queries and unique constraints instead of
 mocks, while staying isolated from the development database and reproducible.
+
+## ADR-0011: Pure simulation core with a Phaser adapter
+
+**Decision.** Gameplay rules live in a framework-free simulation
+(`shared/src/core`) driven by `stepWorld(world, input, delta)`. Phaser is split
+into input, renderer, HUD and scene modules and only reads world state.
+**Why.** Rules stay unit-testable without a browser, rendering and input can
+change independently, and the same simulation could later run headlessly for
+server-side validation or tests. The alternative — putting logic in Phaser
+scenes — would couple gameplay to the engine and make it hard to test.
+**Trade-off.** A small amount of adapter code maps world state to sprites;
+accepted because it keeps the rule modules small and focused.
+
+## ADR-0012: Procedurally generated placeholder textures
+
+**Decision.** Aircraft, enemy, projectile, spark and star textures are generated
+at runtime with Phaser Graphics instead of shipping image assets.
+**Why.** The prototype needs no external assets or licensing decisions, and all
+placeholder art is isolated in `client/src/game/textures.ts`, so replacing it
+with real sprites later touches one module and no gameplay code.
+
+## ADR-0013: Data-driven player, enemy, weapon and level config
+
+**Decision.** Player, enemy, weapon and level values are plain data objects in
+`shared/src/config`; the simulation looks them up by id.
+**Why.** Tuning balance and adding content (enemies, weapons, levels) is a data
+change, not an engine change. The `WeaponConfig` already carries count and
+spread, and `EnemyConfig` carries a `behavior` discriminator, so future phases
+extend data plus small strategy functions rather than rewriting the loop.

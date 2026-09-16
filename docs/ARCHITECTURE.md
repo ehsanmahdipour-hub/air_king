@@ -43,22 +43,42 @@
 | Business logic | `server/src/services` | Economy, purchases, progression |
 | Persistence | `server/src/db` + Prisma | Schema in `server/prisma` |
 
-## Game loop architecture (target)
+## Game simulation
 
-A deterministic fixed-timestep simulation in `shared/core`, driven by systems:
+The core is a deterministic, fixed-step simulation in `shared/src/core` that is
+completely free of Phaser, DOM and network code:
 
-- `MovementSystem`, `WeaponSystem`, `SpawnSystem`, `CollisionSystem`
-  (broad-phase grid), `DamageSystem`, `ScoreSystem`, `BossSystem`,
-  `LevelDirector`, and an object `Pool` for projectiles/particles.
+- `world.ts` — world state (`World`) and `createWorld` / `stepWorld`.
+- `combat.ts`, `score.ts`, `weapons.ts`, `math.ts` — small pure rule modules.
+- `config/` — player, enemy, weapon and level data (`shared/src/config`).
 
-Phaser scenes read simulation state and draw it. Input is translated into
-commands and fed into the simulation. Enemy behaviour is selected from a
-strategy registry via data (`ai: { type, params }`), so adding an enemy is a
-config change plus, at most, one small behaviour module.
+`stepWorld(world, input, delta)` mutates the world and appends `GameEvent`s
+(shot fired, enemy destroyed, player hit, player destroyed) which the
+presentation layer consumes for effects. This keeps rendering, input, audio and
+gameplay rules independently testable and replaceable.
 
-Rendering depth is faked on a flat 2D gameplay plane: a virtual `z` drives sprite
-scale, depth sorting, shadow offset and background parallax. Keeping collisions
-on the plane makes them cheap and precise.
+The Phaser adapter (`client/src/game`) is split by concern:
+
+- `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
+- `render/WorldRenderer.ts` — world state → sprites, background scroll, effects.
+- `ui/Hud.ts` — health, score, level, game-over overlay.
+- `scenes/GameScene.ts` — timing loop wiring, restart handling, no game rules.
+- `textures.ts` — procedurally generated placeholder sprites.
+
+Rendering depth is faked on a flat 2D gameplay plane via a scrolling starfield
+whose per-star parallax and scale suggest distance. Later systems (multiple
+enemy types, formations, bosses) extend the simulation and config rather than
+the engine.
+
+## Current phase
+
+Phase 3 adds the core gameplay prototype: a pure simulation (player movement,
+weapons, spawning, collisions, health, score, game over), data-driven player,
+enemy, weapon and level config, a Phaser adapter split into input, renderer, HUD
+and scene modules, and one playable test level. Phase 2 added authentication and
+Phase 1 the project skeleton; the remaining systems above are implemented in
+later phases.
+
 
 ## Server authority and trust model
 
@@ -96,13 +116,4 @@ progress, owned aircraft, upgrade levels.
   client-supplied ids.
 - **Error handling**: `AppError` and `ZodError` are mapped by a central Fastify
   error handler to structured, non-leaking responses.
-
-## Current phase
-
-Phase 2 adds authentication: `User`/`RefreshToken` models, Argon2id hashing,
-JWT access tokens with rotating refresh cookies, `/api/v1/auth/*` routes, a
-protected `/api/v1/auth/me` route, and frontend auth state with login/register
-UI. Phase 1 delivered the skeleton (client/server boot, DB connectivity, shared
-config). Gameplay architecture above describes the target and is implemented
-incrementally.
 

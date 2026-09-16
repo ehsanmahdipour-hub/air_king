@@ -5,8 +5,9 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 2 — Authentication.** Accounts, login/logout and persisted
-> sessions work end to end. Gameplay arrives in later phases.
+> Status: **Phase 3 — Core Gameplay Prototype.** Account auth plus a playable
+> test level: fly, shoot enemies, take damage, die and restart. Later phases add
+> enemies, levels, progression and bosses.
 
 ## Overview
 
@@ -32,6 +33,17 @@ aircraft shop.
 
 See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the rationale behind each choice.
 
+## Controls
+
+| Action | Input |
+| --- | --- |
+| Move | `W` `A` `S` `D` or move the mouse (the aircraft follows the pointer) |
+| Fire | `Space` or left mouse button |
+| Restart (on game over) | `R` |
+
+The last movement device used takes over: pressing WASD switches to keyboard
+control, moving the mouse switches back. Mouse control needs no clicking.
+
 ## Architecture
 
 ```
@@ -44,13 +56,12 @@ server (Fastify → services → Prisma)
 SQLite (dev) / PostgreSQL (prod)
 ```
 
-Game **rules** live in framework-free TypeScript under `shared/src/core` so they
-can be unit-tested headlessly and reused by the server. Phaser is only the
-renderer, input handler and audio layer. Catalog data (levels, enemies, weapons,
-aircraft, economy) lives in `shared/src/config` and is validated with Zod so the
-server can trust it and the client can render from it.
+Gameplay **rules** live in the shared, framework-free simulation
+(`shared/src/core`) and are unit-tested headlessly. Phaser only renders the
+simulation, reads input and plays effects. Game data (player, enemies, weapons,
+levels) lives in `shared/src/config` so content is added as data. See
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-Full details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Project structure
 

@@ -19,7 +19,10 @@ export function App() {
         <AuthGate />
       </main>
 
-      <footer className="app__footer">Phase 2 — authentication online</footer>
+      <footer className="app__footer">
+        Phase 3 — core gameplay prototype · move with WASD or the mouse · fire with Space or
+        click · press R to restart
+      </footer>
     </div>
   );
 }

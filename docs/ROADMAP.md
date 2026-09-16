@@ -38,9 +38,23 @@ increment, tested, reviewed and merged before the next begins.
 - Frontend auth state (`AuthProvider`) with login/register form and session restore.
 - `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
 
-## Phase 3 preview (next, pending approval)
+## Phase 3 acceptance criteria (complete)
 
-Core gameplay prototype: player aircraft, automatic forward movement, WASD and
-mouse control, shooting, basic collision, one enemy type, health, death and one
-playable level.
+- Pure, framework-free simulation in `shared/src/core` (movement, weapons,
+  spawning, collisions, health, score, game-over) with unit tests.
+- Data-driven game config in `shared/src/config` (player, enemy, weapon, level).
+- Phaser adapter split into input, renderer, HUD and scene modules.
+- Controls: WASD, mouse follow (no clicking), Space and mouse fire, R to restart.
+- One playable test level with a scrolling environment and basic enemy type.
+- HUD shows health, score and level; Game Over state with restart.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified in a real browser via headless Chrome (scene boots; keyboard, mouse,
+  shooting, collision, death and restart behave as expected).
+
+## Phase 4 preview (next, pending approval)
+
+Combat & enemy system: additional enemy types (bomber, missile, mine, turret),
+enemy projectiles, formations, a modular behavior registry, and richer
+explosion/effect feedback.
+
 
