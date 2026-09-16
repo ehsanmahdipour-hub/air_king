@@ -1,0 +1,131 @@
+# Air Combat
+
+A desktop-first, single-player, browser-based arcade air combat game built as a
+modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
+scaling, layering), a 50-level campaign, persistent progression, upgrades and an
+aircraft shop.
+
+> Status: **Phase 1 — Project Foundation.** The game engine boots, the API
+> responds, and the database is wired. Gameplay arrives in later phases.
+
+## Overview
+
+- **Genre:** top-down arcade air combat with visual depth.
+- **Platform:** desktop browsers (Chrome/Firefox/Edge), keyboard + mouse.
+- **Roadmap:** 50 single-player levels, score → coins, upgrades, aircraft shop,
+  boss fights, persistent accounts.
+- **Out of scope:** multiplayer, PvP, leaderboards, social features, mobile app,
+  real-money purchases, ads, 3D/open-world gameplay.
+
+## Technology stack
+
+| Layer | Choice |
+| --- | --- |
+| Language | TypeScript (everywhere) |
+| Repository | pnpm workspaces monorepo (`shared`, `client`, `server`) |
+| Game engine | Phaser 3 |
+| Meta UI | React 18 + Vite |
+| Backend | Node.js + Fastify |
+| Validation | Zod |
+| Database | SQLite (dev) / PostgreSQL (prod) via Prisma |
+| Tests | Vitest |
+
+See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the rationale behind each choice.
+
+## Architecture
+
+```
+client (React shell + Phaser canvas)
+   │  REST /api
+   ▼
+server (Fastify → services → Prisma)
+   │
+   ▼
+SQLite (dev) / PostgreSQL (prod)
+```
+
+Game **rules** live in framework-free TypeScript under `shared/src/core` so they
+can be unit-tested headlessly and reused by the server. Phaser is only the
+renderer, input handler and audio layer. Catalog data (levels, enemies, weapons,
+aircraft, economy) lives in `shared/src/config` and is validated with Zod so the
+server can trust it and the client can render from it.
+
+Full details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Project structure
+
+```
+.
+├── shared/   # framework-free game logic, schemas and static game data
+├── client/   # Vite + React shell, Phaser game
+├── server/   # Fastify API, Prisma database access
+└── docs/     # architecture, decisions, roadmap
+```
+
+## Prerequisites
+
+- Node.js >= 18.18 (Node 20/22 LTS recommended)
+- pnpm (`npm install -g pnpm` or the standalone installer)
+
+## Setup
+
+```bash
+# 1. Install dependencies for all workspaces
+pnpm install
+
+# 2. Configure environment
+cp server/.env.example server/.env
+
+# 3. Create the SQLite database and generate the Prisma client
+pnpm db:push
+```
+
+## Running
+
+```bash
+# Run client and server together
+pnpm dev
+```
+
+- Client: http://localhost:5173
+- Server: http://localhost:3001 (`/api/health`, `/api/health/db`)
+
+Or run them individually:
+
+```bash
+pnpm --filter @game/client dev
+pnpm --filter @game/server dev
+```
+
+## Environment variables
+
+`server/.env` (never commit the real file):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | `file:./dev.db` | Prisma database connection string |
+| `PORT` | `3001` | API server port |
+| `HOST` | `0.0.0.0` | API bind address |
+| `NODE_ENV` | `development` | Runtime environment |
+
+## Testing
+
+```bash
+pnpm test        # all workspaces
+pnpm typecheck   # TypeScript project checks
+pnpm lint        # ESLint
+pnpm build       # production builds
+```
+
+## Git workflow
+
+- `main` is always runnable and protected.
+- One coherent feature per branch: `feature/<phase-or-feature>`.
+- Squash-merge into `main` after acceptance criteria and tests pass.
+- Conventional commit messages.
+- Never commit secrets or `.env` files.
+
+## Development roadmap
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full phase plan. Current phase:
+**Phase 1 — Foundation**.

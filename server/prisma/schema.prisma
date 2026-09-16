@@ -1,0 +1,17 @@
+// Prisma schema for the air combat game.
+// Phase 1 only defines a diagnostics table used to verify database
+// connectivity. Player, auth and progression models are added in later phases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model HealthCheck {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+}
