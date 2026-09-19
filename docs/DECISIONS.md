@@ -184,3 +184,100 @@ completedLevelIds)` plus `getNextLevelId`, unlocking levels in campaign order.
 **Why.** Progressively unlocking levels is a progression rule, not persistence;
 keeping it pure lets the client use it now and the backend reuse it when progress
 is stored in Phase 7.
+
+## ADR-0022: Centralized, config-driven scoring
+
+**Decision.** All score rules live in `core/scoring.ts` and are driven by
+`config/scoring.ts`. Each score source has its own pure function
+(`scoreForEnemyDestroyed`, `scoreForBossDamage`, `scoreForBossDefeat`,
+`scoreForSpecial`); enemy kills use the enemy's configured value times a global
+`killMultiplier`.
+**Why.** The spec requires score to be centralized and configurable and to
+prepare for boss/special sources without implementing them. One module plus one
+config keeps balance data-only and gives later phases a place to plug in without
+touching gameplay logic.
+
+## ADR-0023: One score→coin conversion and an explicit LevelResult
+
+**Decision.** Score is converted to coins only by `calculateCoins` in
+`core/rewards.ts`, driven by `config/economy.ts`. On completion the simulation
+produces a `LevelResult` (`score`, `completionBonus`, `totalScore`, `coins`)
+stored on `world.result`.
+**Why.** A single conversion point prevents coin rules leaking into gameplay.
+Separating gameplay score from the completion bonus (rather than adding the bonus
+into `world.score`) lets the UI show the breakdown the spec asks for, and gives
+the backend a single value object to validate and persist in Phase 7.
+
+## ADR-0024: Score/reward/UI separation; best score in memory for now
+
+**Decision.** The simulation computes score and rewards; `GameScene` only tracks
+best score per level in memory and passes the result to `Hud`, which renders it.
+Boss and special score fields exist but are unwired.
+**Why.** Keeps presentation free of economy rules and vice versa. Persistence of
+coins/best scores is deliberately deferred to Phase 7, so in-memory tracking is
+the smallest correct behaviour now and is easy to replace with API calls later.
+
+## ADR-0025: Server-authoritative progression
+
+**Decision.** The server owns coins, scores, completion bonuses and unlocks. The
+completion endpoint accepts only a gameplay `score`, verifies the level exists
+and is unlocked, bounds the score with `maxAchievableScore` (or an absolute
+ceiling for looping levels), derives the completion bonus from the level and
+coins from the economy config, and persists everything in a transaction. The
+request schema is strict, so coin/reward fields from the client are rejected.
+**Why.** The specification forbids trusting the client for rewards, prices,
+completion or score. Recomputing server-side from the shared catalog makes that
+possible without a separate content service, and a strict schema turns an
+attempted cheat into a clear validation error.
+
+## ADR-0026: Coins on first completion only; replays improve scores
+
+**Decision.** Coins are awarded only the first time a level is completed.
+Replaying a level can raise its `bestScore` (and therefore `totalScore` and
+`highestScore`) but never grants more coins. `totalScore` is the sum of per-level
+best scores; `highestScore` is the best single-run total.
+**Why.** Per-run rewards would let a player farm coins by replaying the easiest
+level. First-completion rewards make the economy monotonic and predictable while
+still crediting improvement. The policy is explicit so it can be tuned later.
+
+## ADR-0027: The server bundle inlines the shared package
+
+**Decision.** `server/tsup.config.ts` sets `noExternal: ['@game/shared']` so the
+built server bundles the shared TypeScript source.
+**Why.** The shared workspace ships `.ts` source (consumed by Vite/vitest
+directly). The built server is plain Node ESM, which cannot import `.ts`, so
+without inlining it crashed at startup (`ERR_UNKNOWN_FILE_EXTENSION`). Bundling
+keeps the single-source-of-truth package without adding a build step for shared.
+
+## ADR-0028: Config-driven upgrade values and costs
+
+**Decision.** Upgrades are declared in `config/upgrades.ts` with a per-level
+`values` array, a `costs` array, a `maxLevel` and an `add`/`multiply` mode. The
+same config is bundled into the client (display) and the server (pricing), and
+`assertUpgradeConfigs` validates the shape at module load.
+**Why.** The requirement is that costs and values are never hard-coded in the UI
+or gameplay. Deriving values, next values and prices from one data table keeps
+the client and server consistent and makes balance a data change. Validation at
+load turns malformed upgrade data into a fast failure rather than impossible
+purchases.
+
+## ADR-0029: Server-authoritative upgrades with a conditional coin deduction
+
+**Decision.** `POST /api/v1/upgrades/:upgradeId/purchase` accepts only the upgrade
+id. The server reads the current level, computes the cost from the shared config,
+checks the balance inside a transaction, and deducts with a conditional
+`updateMany ... where coins >= cost` before incrementing the level.
+**Why.** The client must not determine the price or its own balance. The
+conditional deduction means a stale read or two concurrent requests cannot
+overspend (one wins, the other sees an insufficient balance). Maximum level and
+unknown ids are rejected with explicit errors.
+
+## ADR-0030: A shared loadout resolver applies upgrades to gameplay
+
+**Decision.** `core/loadout.ts::resolveLoadout(levels)` turns upgrade levels into
+effective player/weapon stats; the simulation reads `world.loadout` for health,
+speed, weapon damage/speed/count/fire rate and flat armor. Armor is applied via
+`applyArmor` (flat reduction with a minimum of 1).
+**Why.** Keeping upgrade → stat math in one pure shared module means gameplay,
+previews and tests agree, and the simulation never imports upgrade shop code. A
+flat armor model is simple to reason about and cannot fully negate a hit.

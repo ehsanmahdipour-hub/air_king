@@ -83,10 +83,57 @@ increment, tested, reviewed and merged before the next begins.
 - Verified in a real browser: all five levels play and complete, restart,
   next-level transition, unlocking and failure all behave correctly.
 
-## Phase 6 preview (next, pending approval)
+## Phase 6 acceptance criteria (complete)
 
-Score & reward: score sources, coin conversion via the central economy config,
-completion bonuses and an end-of-level reward screen.
+- Centralized, config-driven scoring (`killMultiplier`; completed-bonus and
+  boss/special sources prepared but unwired).
+- Single score→coin conversion via the economy config; no coin rules in gameplay.
+- `LevelResult` (`score`, `completionBonus`, `totalScore`, `coins`) produced on
+  completion and emitted with the `levelComplete` event.
+- Level-complete summary UI: level, score, completion bonus, total score, coins
+  earned and best score.
+- Score, reward and UI concerns separated.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified in a browser: level completion produces the correct result and coins,
+  best score is recorded and replay resets cleanly.
+
+## Phase 7 acceptance criteria (complete)
+
+- `PlayerProfile` and `LevelProgress` models; migration pushed to the database.
+- Authenticated `GET /api/v1/progress` returns coins, scores, current level and
+  per-level completion/best score.
+- `POST /api/v1/progress/levels/:levelId/complete` validates and persists a
+  completion server-side; client reward/coin fields are rejected.
+- Server validates level existence, unlock state, score plausibility and derives
+  bonuses/coins itself; coins are awarded on first completion only.
+- Handles unauthorized requests, invalid level ids, locked levels, invalid
+  scores, duplicate submissions and per-user isolation.
+- Client progress bridge loads best scores on login and persists completions.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified end to end: register → play → complete → reward → logout → login →
+  progress restored.
+
+## Phase 8 acceptance criteria (complete)
+
+- Config-driven upgrade model with weapon (damage, fire rate, projectile count,
+  projectile speed) and aircraft (health, armor, movement speed, fire power)
+  upgrades, per-level values, costs and maximum levels.
+- Shared `resolveLoadout` applies upgrades to the simulation; armor reduces
+  incoming damage.
+- `PlayerUpgrade` persistence and authenticated `GET /api/v1/upgrades` /
+  `POST /api/v1/upgrades/:upgradeId/purchase` endpoints.
+- Server validates upgrade id, current level, cost and balance; the client never
+  sets the price.
+- Upgrades UI with current level, current→next value, next cost, maximum-level
+  state, coin deduction and insufficient-coins feedback.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified: display, purchase, coin deduction, gameplay effect and persistence
+  after logout/login.
+
+## Phase 9 preview (next, pending approval)
+
+Aircraft system and shop: multiple aircraft with configurable stats, unlocking,
+purchasing with coins, equipping and a shop UI.
 
 
 

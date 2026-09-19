@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from './config';
+import type { GameProgressBridge } from './progressBridge';
 import { GameScene } from './scenes/GameScene';
 
-export function createGame(parent: HTMLElement): Phaser.Game {
+export function createGame(parent: HTMLElement, bridge?: GameProgressBridge): Phaser.Game {
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent,
@@ -14,6 +15,6 @@ export function createGame(parent: HTMLElement): Phaser.Game {
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
     },
-    scene: [GameScene],
+    scene: [new GameScene(bridge)],
   });
 }

@@ -225,6 +225,10 @@ button:disabled {
   color: #6ee7a8;
 }
 
+.account__progress {
+  color: #7fd1ff;
+}
+
 .account__error {
   color: #ff8b8b;
 }
@@ -250,4 +254,83 @@ button:disabled {
 
 .stage__canvas canvas {
   display: block;
+}
+
+/* Upgrades */
+
+.upgrades {
+  padding: 12px 16px;
+  border-bottom: 1px solid #101a2e;
+  background: #080d18;
+}
+
+.upgrades__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upgrades__header h2 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.upgrades__coins {
+  color: #ffe066;
+  font-size: 12px;
+}
+
+.upgrades__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.upgrades__column h3 {
+  margin: 0 0 6px;
+  color: #7fd1ff;
+  font-size: 12px;
+}
+
+.upgrade {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid #0f1728;
+  font-size: 12px;
+}
+
+.upgrade__info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.upgrade__name {
+  min-width: 110px;
+  color: #dbe7ff;
+}
+
+.upgrade__level {
+  color: #5f6f92;
+}
+
+.upgrade__value {
+  color: #6ee7a8;
+}
+
+.upgrades__ok {
+  margin: 6px 0 0;
+  color: #6ee7a8;
+  font-size: 12px;
+}
+
+.upgrades__error {
+  margin: 6px 0 0;
+  color: #ff8b8b;
+  font-size: 12px;
 }

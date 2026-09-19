@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { createGame } from '../game/createGame';
+import type { GameProgressBridge } from '../game/progressBridge';
 import { fetchHealth } from './api';
 
 type ApiStatus = 'checking' | 'ok' | 'unreachable';
 
 /**
- * Hosts the Phaser canvas. Gameplay is not implemented yet; this proves the
- * engine boots and the client can reach the API.
+ * Hosts the Phaser canvas and passes the progress bridge so the game can load
+ * best scores and persist completions without owning API code.
  */
-export function GameStage() {
+export function GameStage({ bridge }: { bridge?: GameProgressBridge }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [apiStatus, setApiStatus] = useState<ApiStatus>('checking');
 
@@ -19,11 +20,11 @@ export function GameStage() {
       return;
     }
 
-    const game = createGame(stage);
+    const game = createGame(stage, bridge);
     return () => {
       game.destroy(true);
     };
-  }, []);
+  }, [bridge]);
 
   useEffect(() => {
     let cancelled = false;

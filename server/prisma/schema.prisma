@@ -1,6 +1,8 @@
 // Prisma schema for the air combat game.
 // Phase 1 defined a diagnostics table used to verify database connectivity.
 // Phase 2 adds authentication models (User, RefreshToken).
+// Phase 7 adds player progression (PlayerProfile, LevelProgress).
+// Phase 8 adds upgrades (PlayerUpgrade).
 
 generator client {
   provider = "prisma-client-js"
@@ -17,14 +19,17 @@ model HealthCheck {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  username     String         @unique
-  passwordHash String
-  role         String         @default("player")
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            String          @id @default(cuid())
+  email         String          @unique
+  username      String          @unique
+  passwordHash  String
+  role          String          @default("player")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
   refreshTokens RefreshToken[]
+  profile       PlayerProfile?
+  levelProgress LevelProgress[]
+  upgrades      PlayerUpgrade[]
 }
 
 model RefreshToken {
@@ -36,5 +41,49 @@ model RefreshToken {
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+/// One progression row per user. Coins, scores and the current level are owned
+/// by the server and only ever changed through validated progression events.
+model PlayerProfile {
+  userId         String   @id
+  coins          Int      @default(0)
+  totalScore     Int      @default(0)
+  highestScore   Int      @default(0)
+  currentLevelId String   @default("level-01")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LevelProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  levelId     String
+  completed   Boolean   @default(false)
+  bestScore   Int       @default(0)
+  attempts    Int       @default(0)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, levelId])
+  @@index([userId])
+}
+
+/// One row per purchased upgrade level. Costs and values come from the shared
+/// upgrade config; the server owns the level and the coin deduction.
+model PlayerUpgrade {
+  id        String   @id @default(cuid())
+  userId    String
+  upgradeId String
+  level     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, upgradeId])
   @@index([userId])
 }

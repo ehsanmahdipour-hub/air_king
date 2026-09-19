@@ -4,7 +4,9 @@ import { ZodError } from 'zod';
 
 import { authRoutes } from './auth/routes';
 import { AppError } from './errors';
+import { progressRoutes } from './progress/routes';
 import { healthRoutes } from './routes/health';
+import { upgradeRoutes } from './upgrades/routes';
 
 export interface BuildAppOptions {
   logger?: boolean;
@@ -45,6 +47,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(progressRoutes);
+  await app.register(upgradeRoutes);
 
   return app;
 }

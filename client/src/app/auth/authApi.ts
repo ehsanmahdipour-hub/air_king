@@ -42,6 +42,11 @@ export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+/** Current in-memory access token, if the user is authenticated. */
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 async function request<T>(path: string, init: RequestInit = {}, withAuth = false): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.body) {

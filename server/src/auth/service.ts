@@ -60,6 +60,7 @@ export async function registerUser(
         email: input.email,
         username: input.username,
         passwordHash,
+        profile: { create: {} },
       },
     });
   } catch (error) {

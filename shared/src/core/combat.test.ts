@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyDamage, isDefeated } from './combat';
+import { applyArmor, applyDamage, isDefeated } from './combat';
 
 describe('applyDamage', () => {
   it('subtracts damage from health', () => {
@@ -30,5 +30,24 @@ describe('isDefeated', () => {
 
   it('is false while health remains', () => {
     expect(isDefeated(1)).toBe(false);
+  });
+});
+
+describe('applyArmor', () => {
+  it('reduces incoming damage by the armor value', () => {
+    expect(applyArmor(20, 4)).toBe(16);
+  });
+
+  it('never reduces a positive hit below 1', () => {
+    expect(applyArmor(5, 99)).toBe(1);
+  });
+
+  it('leaves zero damage at zero', () => {
+    expect(applyArmor(0, 10)).toBe(0);
+  });
+
+  it('rejects negative values', () => {
+    expect(() => applyArmor(-1, 0)).toThrow(RangeError);
+    expect(() => applyArmor(10, -1)).toThrow(RangeError);
   });
 });

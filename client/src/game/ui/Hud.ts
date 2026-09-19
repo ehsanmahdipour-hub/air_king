@@ -1,4 +1,4 @@
-import type { World } from '@game/shared';
+import type { LevelResult, World } from '@game/shared';
 import Phaser from 'phaser';
 
 import { DEPTH } from '../config';
@@ -68,13 +68,14 @@ export class Hud {
       .setDepth(DEPTH.hud + 11)
       .setVisible(false);
     this.overlayDetail = scene.add
-      .text(width / 2, height / 2 + 24, '', {
+      .text(width / 2, height / 2 - 4, '', {
         fontFamily: 'monospace',
         fontSize: '16px',
         color: '#dbe7ff',
-        align: 'center',
+        align: 'left',
+        lineSpacing: 4,
       })
-      .setOrigin(0.5)
+      .setOrigin(0.5, 0)
       .setDepth(DEPTH.hud + 11)
       .setVisible(false);
   }
@@ -99,6 +100,22 @@ export class Hud {
     this.overlayTitle.setText(title).setColor(color);
     this.overlayDetail.setText(detail);
     this.setOverlayVisible(true);
+  }
+
+  /** Level-complete summary built from the centralized level result. */
+  showLevelComplete(result: LevelResult, bestScore: number, hint: string): void {
+    const rows = [
+      `Level             ${result.levelNumber} — ${result.levelName}`,
+      '',
+      `Score             ${result.score}`,
+      `Completion bonus  ${result.completionBonus}`,
+      `Total score       ${result.totalScore}`,
+      `Coins earned      ${result.coins}`,
+      `Best score        ${bestScore}`,
+      '',
+      hint,
+    ];
+    this.showOverlay('LEVEL COMPLETE', rows.join('\n'), '#6ee7a8');
   }
 
   hideOverlay(): void {

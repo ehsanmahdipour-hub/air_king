@@ -1,9 +1,9 @@
 import { STARTER_AIRCRAFT } from '../../config/player';
-import { applyDamage, isDefeated } from '../combat';
+import { applyArmor, applyDamage, isDefeated } from '../combat';
 import { compact } from '../collections';
 import type { EnemyState, World } from '../entities';
 import { circlesOverlap } from '../math';
-import { addScore, scoreForKill } from '../score';
+import { addScore, scoreForEnemyDestroyed } from '../scoring';
 
 export function resolveCollisions(world: World): void {
   resolvePlayerProjectileHits(world);
@@ -65,12 +65,13 @@ function resolveEnemyProjectileHits(world: World): void {
       continue;
     }
 
-    player.health = applyDamage(player.health, projectile.damage);
+    const damage = applyArmor(projectile.damage, player.armor);
+    player.health = applyDamage(player.health, damage);
     player.invulnerableFor = STARTER_AIRCRAFT.invulnerabilitySeconds;
     world.events.push({
       type: 'playerHit',
       position: { ...player.position },
-      damage: projectile.damage,
+      damage,
     });
   }
 }
@@ -93,19 +94,20 @@ function resolvePlayerContact(world: World): void {
       continue;
     }
 
-    player.health = applyDamage(player.health, enemy.contactDamage);
+    const damage = applyArmor(enemy.contactDamage, player.armor);
+    player.health = applyDamage(player.health, damage);
     player.invulnerableFor = STARTER_AIRCRAFT.invulnerabilitySeconds;
     world.events.push({
       type: 'playerHit',
       position: { ...player.position },
-      damage: enemy.contactDamage,
+      damage,
     });
   }
 }
 
 function destroyEnemy(world: World, enemy: EnemyState): void {
   enemy.alive = false;
-  const gained = scoreForKill(enemy);
+  const gained = scoreForEnemyDestroyed(enemy, world.scoreConfig);
   world.score = addScore(world.score, gained);
   world.director.enemiesDestroyed += 1;
   world.events.push({ type: 'enemyDestroyed', position: { ...enemy.position }, score: gained });

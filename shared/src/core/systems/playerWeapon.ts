@@ -1,5 +1,3 @@
-import { STARTER_AIRCRAFT } from '../../config/player';
-import { getWeapon } from '../../config/weapons';
 import type { InputState, World } from '../entities';
 import { createProjectiles } from '../weapons';
 import { spawnProjectile } from './projectiles';
@@ -15,7 +13,7 @@ export function updatePlayerWeapon(world: World, input: InputState, delta: numbe
     return;
   }
 
-  const weapon = getWeapon(STARTER_AIRCRAFT.weaponId);
+  const weapon = world.loadout.weapon;
   for (const spawn of createProjectiles(player.position, weapon.projectile)) {
     spawnProjectile(world, 'player', spawn);
   }

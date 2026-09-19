@@ -1,6 +1,9 @@
+import type { EconomyConfig } from '../config/economy';
 import type { EnemyConfig } from '../config/enemies';
 import type { DifficultyModifiers, LevelConfig } from '../config/levels';
-import type { GameEvent, Vec2 } from '../types';
+import type { ScoreConfig } from '../config/scoring';
+import type { GameEvent, LevelResult, Vec2 } from '../types';
+import type { ResolvedLoadout } from './loadout';
 
 /**
  * Level lifecycle. `ready` is the level-start countdown, `playing` the active
@@ -15,6 +18,8 @@ export interface PlayerState {
   radius: number;
   health: number;
   maxHealth: number;
+  /** Flat damage reduction from aircraft upgrades. */
+  armor: number;
   /** Seconds remaining before the weapon can fire again. */
   fireCooldown: number;
   /** Seconds of remaining damage immunity after a hit. */
@@ -83,10 +88,19 @@ export interface World {
   elapsed: number;
   /** Total forward distance travelled, used to scroll and to complete levels. */
   distance: number;
+  /** Score earned during gameplay (enemies, and later bosses/specials). */
   score: number;
+  /** Set when the level is completed; drives the level-complete UI. */
+  result: LevelResult | null;
   level: LevelConfig;
   /** Difficulty scaling resolved from the level tier, applied at spawn. */
   difficultyModifiers: DifficultyModifiers;
+  /** Central score rules (kill multiplier, boss/special values). */
+  scoreConfig: ScoreConfig;
+  /** Central economy rules used to convert score into coins. */
+  economy: EconomyConfig;
+  /** Effective player/weapon stats after applying upgrade levels. */
+  loadout: ResolvedLoadout;
   player: PlayerState;
   enemies: EnemyState[];
   projectiles: ProjectileState[];

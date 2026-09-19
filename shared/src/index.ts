@@ -6,8 +6,26 @@ export {
 } from './config/economy';
 export { calculateCoins } from './core/rewards';
 
+// Scoring
+export {
+  scoreConfigSchema,
+  DEFAULT_SCORE_CONFIG,
+  type ScoreConfig,
+} from './config/scoring';
+
 // Shared primitives
-export type { Vec2, GameEvent } from './types';
+export type {
+  Vec2,
+  GameEvent,
+  LevelResult,
+  PlayerProfileData,
+  LevelProgressData,
+  ProgressResponse,
+  CompleteLevelReward,
+  CompleteLevelResponse,
+  UpgradesResponse,
+  PurchaseUpgradeResponse,
+} from './types';
 
 // Game data (configuration)
 export {
@@ -33,6 +51,22 @@ export {
   type TurretConfig,
 } from './config/enemies';
 export { STARTER_AIRCRAFT, type PlayerConfig } from './config/player';
+export {
+  UPGRADES,
+  DEFAULT_UPGRADE_LEVELS,
+  getUpgrade,
+  isUpgradeId,
+  clampUpgradeLevel,
+  upgradeValue,
+  upgradeNextValue,
+  upgradeCost,
+  assertUpgradeConfigs,
+  type UpgradeConfig,
+  type UpgradeCategory,
+  type UpgradeId,
+  type UpgradeStat,
+  type UpgradeLevels,
+} from './config/upgrades';
 
 // Level data (configuration + validation)
 export {
@@ -65,8 +99,9 @@ export {
 
 // Pure game rules
 export { clamp, length, normalize, distance, circlesOverlap, angleBetween, randomRange } from './core/math';
-export { applyDamage, isDefeated } from './core/combat';
-export { addScore, scoreForKill } from './core/score';
+export { applyDamage, applyArmor, isDefeated } from './core/combat';
+export { resolveLoadout, type ResolvedLoadout } from './core/loadout';
+export { addScore, scoreForEnemyDestroyed, scoreForBossDamage, scoreForBossDefeat, scoreForSpecial, maxAchievableScore } from './core/scoring';
 export { createProjectiles, type ProjectileSpawn } from './core/weapons';
 export { formationSpawnPosition, type FormationParams } from './core/formations';
 export { applyDifficulty } from './core/difficulty';

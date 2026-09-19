@@ -98,6 +98,65 @@ testable and replaceable.
 - `progression.ts` provides `isLevelUnlocked` (sequential) and `getNextLevelId`;
   the client tracks completions in memory until persistence arrives in Phase 7.
 
+### Score and reward
+
+- **Score calculation** lives in `core/scoring.ts` and is driven by
+  `config/scoring.ts` (`killMultiplier`, plus prepared `bossDamageScore`,
+  `bossDefeatScore`, `specialMultiplier`). Each score source has its own pure
+  function; enemy kills use the enemy's configured value times the multiplier.
+- **Reward calculation** lives in `core/rewards.ts` (`calculateCoins`) and is
+  driven by `config/economy.ts` (`scorePerCoin`, `minCoinsPerLevel`). Nothing in
+  gameplay hard-codes coin rules.
+- On completion the simulation builds a `LevelResult`
+  (`score`, `completionBonus`, `totalScore`, `coins`) stored on `world.result`
+  and emitted with the `levelComplete` event. Gameplay score stays separate from
+  the completion bonus.
+- **Presentation** is separate: `GameScene` tracks best scores in memory (until
+  persistence) and `Hud.showLevelComplete` renders the summary. The simulation
+  never renders; the UI never computes rewards.
+
+### Backend persistence and progression
+
+- The database stores `PlayerProfile` (coins, totalScore, highestScore,
+  currentLevelId) and one `LevelProgress` row per user/level (completed,
+  bestScore, attempts, completedAt). Profiles are created on registration and
+  lazily for pre-existing accounts.
+- `GET /api/v1/progress` returns the profile and per-level progress;
+  `POST /api/v1/progress/levels/:levelId/complete` submits only a gameplay
+  `score`.
+- The server is authoritative: it requires a known, unlocked level, bounds the
+  score by `maxAchievableScore` (or an absolute ceiling for looping levels),
+  reads the completion bonus from the level and converts to coins via the
+  economy config. The request schema is strict, so client-supplied coin/reward
+  fields are rejected. Coins are awarded only on a level's first completion;
+  replays only improve best/total/highest scores.
+- The client never computes authoritative rewards. A `GameProgressBridge` is
+  injected into the game by the React shell: the game reports a completion and
+  reads/updates a best-score map, while the shell owns the HTTP calls. The
+  server's response (coins, best score) replaces the local summary when it
+  arrives; failures fall back to the local summary.
+
+### Upgrade system
+
+- Upgrade definitions live in `config/upgrades.ts`: weapon (damage, fire rate,
+  projectile count, projectile speed) and aircraft (health, armor, movement
+  speed, fire power). Each is pure data with per-level `values` and `costs`, a
+  `maxLevel` and an `add`/`multiply` mode; `assertUpgradeConfigs` validates the
+  shape at load. The client and server derive the same values and prices.
+- `core/loadout.ts::resolveLoadout(levels)` combines the base aircraft/weapon
+  with upgrade levels into effective stats. The simulation uses this loadout for
+  max health, movement speed, weapon damage/speed/count/fire rate and flat armor
+  (`applyArmor` in `combat.ts`). No gameplay code hard-codes upgrade numbers.
+- The database stores one `PlayerUpgrade` row per user/upgrade. The server owns
+  purchases: `POST /api/v1/upgrades/:upgradeId/purchase` validates the upgrade id,
+  reads the current level, computes the cost from the shared config, checks the
+  balance and deducts it with a conditional update so a stale balance or a race
+  cannot overspend. `GET /api/v1/upgrades` returns levels plus the profile.
+- The UI is separate: `UpgradesPanel` renders levels, current→next values, costs
+  and maximum-level state from the shared config, and shows server feedback
+  (e.g. insufficient coins). Purchases update the profile and the game bridge's
+  `upgradeLevels`, which `createWorld` uses on the next level load/restart.
+
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
@@ -115,13 +174,13 @@ background colour and star tint.
 
 ## Current phase
 
-Phase 5 replaces the single hard-coded level with a data-driven level system:
-a validated level model, a level director (waves, obstacle sections, completion
-and failure), configurable difficulty tiers, environments and progressive
-unlocking, validated with five authored levels. Phase 4 added the combat/enemy
-system, Phase 3 the core gameplay prototype, Phase 2 authentication and Phase 1
-the project skeleton; score/reward persistence, upgrades, aircraft and bosses
-arrive in later phases.
+Phase 8 adds the upgrade system: config-driven weapon and aircraft upgrades with
+per-level values and costs, a shared `resolveLoadout` that applies them to
+gameplay (including armor), server-validated purchases persisted per user, and an
+upgrades UI. Phase 7 added backend persistence, Phase 6 scoring/rewards, Phase 5
+the level system, Phase 4 the combat/enemy system, Phase 3 the core gameplay
+prototype, Phase 2 authentication and Phase 1 the project skeleton; the aircraft
+shop and bosses arrive in later phases.
 
 
 ## Server authority and trust model

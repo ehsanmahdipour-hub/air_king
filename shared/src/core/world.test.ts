@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BOMBER, FIGHTER, MINE, TURRET, getEnemy } from '../config/enemies';
+import { DEFAULT_ECONOMY_CONFIG } from '../config/economy';
 import { LEVELS, type LevelConfig } from '../config/levels';
 import { STARTER_AIRCRAFT } from '../config/player';
+import { DEFAULT_SCORE_CONFIG } from '../config/scoring';
+import { calculateCoins } from './rewards';
 import {
   createWorld,
   stepWorld,
@@ -10,6 +13,7 @@ import {
   type InputState,
   type ProjectileState,
   type World,
+  type WorldOptions,
 } from './world';
 
 const IDLE: InputState = { move: { x: 0, y: 0 }, firing: false };
@@ -432,14 +436,13 @@ describe('level completion', () => {
     };
   }
 
-  it('completes a clear-waves level when all waves are cleared', () => {
-    const world = createWorld(singleEnemyLevel());
+  function completeSingleEnemyLevel(options?: WorldOptions): World {
+    const world = createWorld(singleEnemyLevel(), options);
     startPlaying(world);
 
     for (let step = 0; step < 20 && world.enemies.length === 0; step += 1) {
       stepWorld(world, IDLE, 0.05);
     }
-    expect(world.enemies).toHaveLength(1);
 
     const enemy = world.enemies[0];
     if (!enemy) {
@@ -451,10 +454,45 @@ describe('level completion', () => {
     );
 
     stepWorld(world, IDLE, 0.05);
+    return world;
+  }
+
+  it('completes a clear-waves level with a centralized score and reward result', () => {
+    const world = completeSingleEnemyLevel();
 
     expect(world.status).toBe('levelComplete');
-    expect(world.score).toBe(FIGHTER.scoreValue + 500);
     expect(world.events.some((event) => event.type === 'levelComplete')).toBe(true);
+    expect(world.result).toEqual({
+      levelId: world.level.id,
+      levelNumber: world.level.levelNumber,
+      levelName: world.level.name,
+      score: FIGHTER.scoreValue,
+      completionBonus: 500,
+      totalScore: FIGHTER.scoreValue + 500,
+      coins: calculateCoins(FIGHTER.scoreValue + 500, DEFAULT_ECONOMY_CONFIG),
+    });
+  });
+
+  it('keeps gameplay score separate from the completion bonus', () => {
+    const world = completeSingleEnemyLevel();
+    expect(world.score).toBe(FIGHTER.scoreValue);
+    expect(world.result?.completionBonus).toBe(500);
+  });
+
+  it('converts total score to coins using the world economy config', () => {
+    const world = completeSingleEnemyLevel({
+      economy: { scorePerCoin: 10, minCoinsPerLevel: 0 },
+    });
+
+    expect(world.result?.coins).toBe(Math.floor((world.result?.totalScore ?? 0) / 10));
+  });
+
+  it('applies the score kill multiplier', () => {
+    const world = completeSingleEnemyLevel({
+      scoreConfig: { ...DEFAULT_SCORE_CONFIG, killMultiplier: 3 },
+    });
+
+    expect(world.result?.score).toBe(FIGHTER.scoreValue * 3);
   });
 
   it('completes a reach-distance level when the distance goal is reached', () => {
@@ -471,5 +509,36 @@ describe('level completion', () => {
 
     expect(world.status).toBe('levelComplete');
     expect(world.distance).toBeGreaterThanOrEqual(30);
+    expect(world.result).not.toBeNull();
+  });
+});
+
+describe('upgrades', () => {
+  it('applies the resolved loadout to the player and weapon', () => {
+    const world = createWorld(ISOLATION_LEVEL, {
+      upgrades: {
+        'aircraft-health': 2,
+        'aircraft-armor': 3,
+        'weapon-damage': 3,
+        'aircraft-fire-power': 3,
+      },
+    });
+
+    expect(world.player.maxHealth).toBe(125);
+    expect(world.player.health).toBe(125);
+    expect(world.player.armor).toBe(4);
+    expect(world.loadout.weapon.projectile.damage).toBe(21);
+  });
+
+  it('reduces incoming contact damage with armor', () => {
+    const world = createWorld(ISOLATION_LEVEL, { upgrades: { 'aircraft-armor': 3 } });
+    startPlaying(world);
+    stopSpawning(world);
+    world.player.invulnerableFor = 0;
+    world.enemies.push(makeEnemy({ position: { ...world.player.position }, speed: 0 }));
+
+    stepWorld(world, IDLE, 0.016);
+
+    expect(world.player.health).toBe(world.player.maxHealth - (FIGHTER.contactDamage - 4));
   });
 });

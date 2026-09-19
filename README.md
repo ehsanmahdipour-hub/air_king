@@ -5,10 +5,10 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 5 — Level System.** Account auth plus five data-driven,
-> progressively unlocked levels with waves, formations, obstacle sections,
-> difficulty tiers and completion/failure states. Later phases add score/reward
-> persistence, upgrades, aircraft and bosses.
+> Status: **Phase 8 — Upgrade System.** Account auth, five data-driven levels,
+> centralized scoring/reward, server-authoritative progression and a
+> config-driven upgrade system (weapon and aircraft upgrades with coins). Later
+> phases add the aircraft shop and bosses.
 
 ## Overview
 
@@ -143,10 +143,17 @@ httpOnly refresh cookie.
 | `POST` | `/api/v1/auth/refresh` | cookie | Rotate refresh token, returns new access token |
 | `POST` | `/api/v1/auth/logout` | cookie | Revoke refresh token and clear cookie |
 | `GET` | `/api/v1/auth/me` | Bearer | Return the authenticated user |
+| `GET` | `/api/v1/progress` | Bearer | Return the player's coins, scores and completed levels |
+| `POST` | `/api/v1/progress/levels/:levelId/complete` | Bearer | Submit a level score; server validates and persists the reward |
+| `GET` | `/api/v1/upgrades` | Bearer | Return the player's upgrade levels and coin balance |
+| `POST` | `/api/v1/upgrades/:upgradeId/purchase` | Bearer | Buy the next upgrade level; server validates price and balance |
 | `GET` | `/api/health` | – | Server health |
 | `GET` | `/api/health/db` | – | Database connectivity |
 
-Passwords are hashed with Argon2id and never returned by any endpoint.
+Passwords are hashed with Argon2id and never returned by any endpoint. The
+server owns coins, bonuses and progression: the completion endpoint accepts only
+a gameplay `score` and recomputes rewards; client-supplied coin/reward fields are
+rejected.
 
 
 ## Testing

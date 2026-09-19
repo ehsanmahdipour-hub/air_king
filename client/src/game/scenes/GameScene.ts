@@ -3,6 +3,7 @@ import {
   getNextLevelId,
   isLevelUnlocked,
   stepWorld,
+  type CompleteLevelResponse,
   type GameEvent,
   type LevelConfig,
   type World,
@@ -11,6 +12,7 @@ import Phaser from 'phaser';
 
 import { CAMPAIGN } from '../config';
 import { PlayerInput } from '../input/PlayerInput';
+import type { GameProgressBridge } from '../progressBridge';
 import { Effects } from '../render/Effects';
 import { WorldRenderer } from '../render/WorldRenderer';
 import { createGameTextures } from '../textures';
@@ -18,14 +20,16 @@ import { Hud } from '../ui/Hud';
 
 /**
  * Gameplay scene. It owns the timing loop, drives the level system and wires
- * the pure simulation to the input, renderer, effects and HUD adapters. It
- * contains no gameplay rules.
+ * the pure simulation to the input, renderer, effects, HUD and progress bridge.
+ * It contains no gameplay rules and no API code.
  */
 export class GameScene extends Phaser.Scene {
   private world!: World;
   private level!: LevelConfig;
-  /** In-memory completion set; persistence arrives in a later phase. */
-  private readonly completedLevelIds: string[] = [];
+  private completedLevelIds = new Set<string>();
+  private bestScores = new Map<string, number>();
+  private completionSynced = false;
+  private serverReward: CompleteLevelResponse['result'] | null = null;
 
   private controls!: PlayerInput;
   private worldRenderer!: WorldRenderer;
@@ -34,12 +38,15 @@ export class GameScene extends Phaser.Scene {
   private restartKey?: Phaser.Input.Keyboard.Key;
   private nextKey?: Phaser.Input.Keyboard.Key;
 
-  constructor() {
+  constructor(private readonly bridge?: GameProgressBridge) {
     super('Game');
   }
 
   create(): void {
     createGameTextures(this);
+
+    this.completedLevelIds = this.bridge?.completedLevelIds ?? new Set();
+    this.bestScores = this.bridge?.bestScores ?? new Map();
 
     this.controls = new PlayerInput(this);
     this.effects = new Effects(this);
@@ -47,7 +54,9 @@ export class GameScene extends Phaser.Scene {
     this.restartKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this.nextKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.N);
 
-    this.loadLevel(0);
+    const startId = this.bridge?.currentLevelId;
+    const startIndex = startId ? CAMPAIGN.findIndex((level) => level.id === startId) : 0;
+    this.loadLevel(startIndex >= 0 ? startIndex : 0);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.controls.dispose();
@@ -86,7 +95,9 @@ export class GameScene extends Phaser.Scene {
 
   private loadLevel(index: number): void {
     this.level = CAMPAIGN[index];
-    this.world = createWorld(this.level);
+    this.world = createWorld(this.level, { upgrades: this.bridge?.upgradeLevels });
+    this.completionSynced = false;
+    this.serverReward = null;
 
     this.worldRenderer?.destroy();
     this.worldRenderer = new WorldRenderer(this, this.level);
@@ -94,14 +105,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private restart(): void {
-    this.world = createWorld(this.level);
+    this.world = createWorld(this.level, { upgrades: this.bridge?.upgradeLevels });
+    this.completionSynced = false;
+    this.serverReward = null;
     this.worldRenderer.reset();
     this.hud.hideOverlay();
   }
 
   private goToNextLevel(): void {
     const nextId = getNextLevelId(this.level.id);
-    if (!nextId || !isLevelUnlocked(nextId, this.completedLevelIds)) {
+    if (!nextId || !isLevelUnlocked(nextId, [...this.completedLevelIds])) {
       return;
     }
 
@@ -122,21 +135,74 @@ export class GameScene extends Phaser.Scene {
         this.hud.hideOverlay();
         break;
       case 'levelComplete': {
-        if (!this.completedLevelIds.includes(level.id)) {
-          this.completedLevelIds.push(level.id);
+        if (!world.result) {
+          break;
         }
-        const nextId = getNextLevelId(level.id);
-        const next = nextId ? CAMPAIGN.find((candidate) => candidate.id === nextId) : undefined;
-        this.hud.showOverlay(
-          'LEVEL COMPLETE',
-          `Score: ${world.score}\n\nR replay · ${next ? `N next (${next.name})` : 'final level cleared'}`,
-          '#6ee7a8',
-        );
+        this.completedLevelIds.add(level.id);
+        if (!this.completionSynced) {
+          this.completionSynced = true;
+          void this.syncCompletion();
+        }
+        this.renderSummary();
         break;
       }
       case 'gameover':
         this.hud.showOverlay('GAME OVER', `Score: ${world.score}\n\nPress R to restart`, '#ff8b8b');
         break;
+    }
+  }
+
+  /** Renders the level-complete summary, preferring the server reward. */
+  private renderSummary(): void {
+    const result = this.world.result;
+    if (!result) {
+      return;
+    }
+
+    const reward = this.serverReward ?? {
+      score: result.score,
+      completionBonus: result.completionBonus,
+      totalScore: result.totalScore,
+      coins: result.coins,
+    };
+    const bestScore = Math.max(
+      this.bestScores.get(result.levelId) ?? 0,
+      reward.totalScore,
+    );
+    const merged = { ...result, ...reward };
+
+    const nextId = getNextLevelId(result.levelId);
+    const next = nextId ? CAMPAIGN.find((candidate) => candidate.id === nextId) : undefined;
+    const hint = next ? `R replay · N next (${next.name})` : 'R replay · final level cleared';
+    this.hud.showLevelComplete(merged, bestScore, hint);
+  }
+
+  /**
+   * Sends the completion to the server and adopts its authoritative reward.
+   * Failures leave the locally computed summary in place.
+   */
+  private async syncCompletion(): Promise<void> {
+    const bridge = this.bridge;
+    const result = this.world.result;
+    if (!bridge || !result) {
+      return;
+    }
+
+    try {
+      const response = await bridge.onLevelComplete(result.levelId, result.score);
+      if (!response) {
+        return;
+      }
+      this.serverReward = response.result;
+      this.bestScores.set(
+        result.levelId,
+        Math.max(this.bestScores.get(result.levelId) ?? 0, response.result.totalScore),
+      );
+      if (this.world.status === 'levelComplete') {
+        this.renderSummary();
+      }
+    } catch {
+      // Keep the locally computed summary if the server could not be reached.
     }
   }
 

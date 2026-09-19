@@ -1,4 +1,3 @@
-import { STARTER_AIRCRAFT } from '../../config/player';
 import { MOUSE_DEAD_ZONE, MOUSE_EASE_DISTANCE } from '../constants';
 import type { InputState, PlayerState, World } from '../entities';
 import { clamp, length, normalize } from '../math';
@@ -13,12 +12,12 @@ export function updatePlayer(world: World, input: InputState, delta: number): vo
 
   const move = resolveMovement(player, input);
   player.position.x = clamp(
-    player.position.x + move.x * STARTER_AIRCRAFT.speed * delta,
+    player.position.x + move.x * world.loadout.speed * delta,
     player.radius,
     level.arena.width - player.radius,
   );
   player.position.y = clamp(
-    player.position.y + move.y * STARTER_AIRCRAFT.speed * delta,
+    player.position.y + move.y * world.loadout.speed * delta,
     player.radius,
     level.arena.height - player.radius,
   );

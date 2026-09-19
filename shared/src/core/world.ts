@@ -1,16 +1,22 @@
+import { DEFAULT_ECONOMY_CONFIG, type EconomyConfig } from '../config/economy';
 import { LEVELS, difficultyModifiers, type LevelConfig } from '../config/levels';
 import { STARTER_AIRCRAFT } from '../config/player';
+import type { UpgradeLevels } from '../config/upgrades';
+import { DEFAULT_SCORE_CONFIG, type ScoreConfig } from '../config/scoring';
 import { isDefeated } from './combat';
 import { MAX_STEP_SECONDS } from './constants';
 import type { InputState, World } from './entities';
 import { createDirectorState, isLevelCleared, updateSpawns } from './levelDirector';
+import { resolveLoadout } from './loadout';
 import { clamp } from './math';
-import { addScore } from './score';
+import { calculateCoins } from './rewards';
+import { addScore } from './scoring';
 import { resolveCollisions } from './systems/collisions';
 import { updateEnemies } from './systems/enemies';
 import { updatePlayer } from './systems/player';
 import { updatePlayerWeapon } from './systems/playerWeapon';
 import { updateProjectiles } from './systems/projectiles';
+import type { LevelResult } from '../types';
 
 export type {
   DirectorState,
@@ -23,21 +29,36 @@ export type {
   World,
 } from './entities';
 
-export function createWorld(level: LevelConfig = LEVELS[0]): World {
+export interface WorldOptions {
+  /** Overrides the central economy config (used by tests and later by users). */
+  economy?: EconomyConfig;
+  /** Overrides the central score config. */
+  scoreConfig?: ScoreConfig;
+  /** Player upgrade levels applied to the loadout. */
+  upgrades?: Partial<UpgradeLevels>;
+}
+
+export function createWorld(level: LevelConfig = LEVELS[0], options: WorldOptions = {}): World {
   const playerConfig = STARTER_AIRCRAFT;
+  const loadout = resolveLoadout(options.upgrades);
 
   return {
     status: 'ready',
     elapsed: 0,
     distance: 0,
     score: 0,
+    result: null,
     level,
     difficultyModifiers: difficultyModifiers(level.difficulty),
+    scoreConfig: options.scoreConfig ?? DEFAULT_SCORE_CONFIG,
+    economy: options.economy ?? DEFAULT_ECONOMY_CONFIG,
+    loadout,
     player: {
       position: { ...level.playerStart },
       radius: playerConfig.radius,
-      health: playerConfig.maxHealth,
-      maxHealth: playerConfig.maxHealth,
+      health: loadout.maxHealth,
+      maxHealth: loadout.maxHealth,
+      armor: loadout.armor,
       fireCooldown: 0,
       invulnerableFor: 0,
     },
@@ -94,12 +115,24 @@ export function stepWorld(world: World, input: InputState, deltaSeconds: number)
   }
 
   if (isLevelCleared(world)) {
-    world.score = addScore(world.score, world.level.reward.completionBonus);
+    const completionBonus = world.level.reward.completionBonus;
+    const totalScore = addScore(world.score, completionBonus);
+    const result: LevelResult = {
+      levelId: world.level.id,
+      levelNumber: world.level.levelNumber,
+      levelName: world.level.name,
+      score: world.score,
+      completionBonus,
+      totalScore,
+      coins: calculateCoins(totalScore, world.economy),
+    };
+
+    world.result = result;
     world.status = 'levelComplete';
     world.events.push({
       type: 'levelComplete',
       position: { ...world.player.position },
-      score: world.score,
+      result,
     });
   }
 }
