@@ -2,7 +2,7 @@ import type { LevelConfig, World } from '@game/shared';
 import Phaser from 'phaser';
 
 import { DEPTH } from '../config';
-import { enemyTexture, TEXTURES } from '../textures';
+import { bossTexture, enemyTexture, TEXTURES } from '../textures';
 import { SpritePool } from './SpritePool';
 
 interface Star {
@@ -24,6 +24,7 @@ export class WorldRenderer {
   private readonly enemyPool: SpritePool;
   private readonly projectilePool: SpritePool;
   private readonly stars: Star[] = [];
+  private bossSprite?: Phaser.GameObjects.Image;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -49,6 +50,7 @@ export class WorldRenderer {
 
     this.syncEnemies(world);
     this.syncProjectiles(world);
+    this.syncBoss(world);
   }
 
   /** Briefly tints the player sprite when it takes a hit. */
@@ -73,6 +75,7 @@ export class WorldRenderer {
     }
     this.stars.length = 0;
 
+    this.bossSprite?.destroy();
     this.playerSprite.destroy();
   }
 
@@ -114,6 +117,28 @@ export class WorldRenderer {
     }
 
     this.removeMissing(this.enemySprites, seen, this.enemyPool);
+  }
+
+  private syncBoss(world: World): void {
+    const boss = world.boss;
+    if (!boss) {
+      this.bossSprite?.destroy();
+      this.bossSprite = undefined;
+      return;
+    }
+
+    if (!this.bossSprite) {
+      this.bossSprite = this.scene.add.image(
+        boss.position.x,
+        boss.position.y,
+        bossTexture(boss.bossId),
+      );
+    }
+    this.bossSprite
+      .setTexture(bossTexture(boss.bossId))
+      .setDepth(DEPTH.enemy)
+      .setPosition(boss.position.x, boss.position.y)
+      .setAlpha(boss.entering ? 0.85 : 1);
   }
 
   private syncProjectiles(world: World): void {

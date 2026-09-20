@@ -3,6 +3,7 @@ import type { FormationType, LevelConfig } from '../config/levels';
 import { applyDifficulty } from './difficulty';
 import type { DirectorState, World } from './entities';
 import { formationSpawnPosition } from './formations';
+import { spawnBoss } from './systems/boss';
 
 export function createDirectorState(level: LevelConfig): DirectorState {
   const totalEnemies =
@@ -26,6 +27,9 @@ export function createDirectorState(level: LevelConfig): DirectorState {
     totalEnemies,
     enemiesSpawned: 0,
     enemiesDestroyed: 0,
+    bossSpawned: false,
+    bossDefeated: false,
+    bossSpawnTimer: -1,
   };
 }
 
@@ -37,6 +41,7 @@ export function createDirectorState(level: LevelConfig): DirectorState {
 export function updateSpawns(world: World, deltaSeconds: number): void {
   updateWaveSpawning(world, deltaSeconds);
   updateObstacleSpawning(world, deltaSeconds);
+  updateBossSpawning(world, deltaSeconds);
 }
 
 export function isLevelCleared(world: World): boolean {
@@ -49,7 +54,8 @@ export function isLevelCleared(world: World): boolean {
   return (
     director.waveIndex >= level.waves.length &&
     director.obstacleIndex >= level.obstacleSections.length &&
-    world.enemies.length === 0
+    world.enemies.length === 0 &&
+    (!level.boss || director.bossDefeated)
   );
 }
 
@@ -159,6 +165,35 @@ function updateObstacleSpawning(world: World, deltaSeconds: number): void {
   }
 
   director.obstacleTimer = Number.POSITIVE_INFINITY;
+}
+
+/**
+ * Spawns the level boss once all waves and obstacle sections are emitted, after
+ * the configured delay. The boss id comes from the level reference.
+ */
+function updateBossSpawning(world: World, deltaSeconds: number): void {
+  const reference = world.level.boss;
+  if (!reference || world.director.bossSpawned) {
+    return;
+  }
+
+  const wavesDone = world.director.waveIndex >= world.level.waves.length;
+  const obstaclesDone = world.director.obstacleIndex >= world.level.obstacleSections.length;
+  if (!wavesDone || !obstaclesDone) {
+    return;
+  }
+
+  if (world.director.bossSpawnTimer < 0) {
+    world.director.bossSpawnTimer = reference.spawnDelaySeconds ?? 1.5;
+    return;
+  }
+
+  world.director.bossSpawnTimer -= deltaSeconds;
+  if (world.director.bossSpawnTimer > 0) {
+    return;
+  }
+
+  spawnBoss(world, reference.bossId);
 }
 
 function spawnEnemy(

@@ -41,5 +41,6 @@ export const LEVEL_03: LevelConfig = {
   obstacleSections: [
     { enemyTypeId: 'mine', count: 4, formation: 'random', interval: 0.9, startDelay: 3.5 },
   ],
+  boss: { bossId: 'dreadnought', spawnDelaySeconds: 1.5 },
   reward: { completionBonus: 1000 },
 };

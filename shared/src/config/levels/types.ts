@@ -61,11 +61,11 @@ export interface ObstacleSection {
   startDelay: number;
 }
 
-/** Boss slot for a level. Consumed by the boss system in a later phase. */
+/** Boss slot for a level. The boss id is resolved from the boss catalog. */
 export interface BossReference {
   bossId: string;
-  /** Distance mark at which the boss appears once the boss system exists. */
-  atDistance?: number;
+  /** Seconds after all waves/obstacles are spawned before the boss appears. */
+  spawnDelaySeconds?: number;
 }
 
 export interface LevelRewardConfig {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { getBoss } from '../bosses';
 import { getEnemy } from '../enemies';
 import type { LevelConfig } from './types';
 
@@ -55,7 +56,7 @@ export const levelConfigSchema = z.object({
   boss: z
     .object({
       bossId: z.string().min(1),
-      atDistance: z.number().nonnegative().optional(),
+      spawnDelaySeconds: z.number().nonnegative().optional(),
     })
     .optional(),
   reward: z.object({
@@ -100,4 +101,12 @@ export function assertLevelSemantics(config: LevelConfig): void {
   config.obstacleSections.forEach((section, index) => {
     validateEnemyId(section.enemyTypeId, `obstacle section ${index + 1}`);
   });
+
+  if (config.boss) {
+    try {
+      getBoss(config.boss.bossId);
+    } catch {
+      throw new Error(`Level "${config.id}" references unknown boss "${config.boss.bossId}"`);
+    }
+  }
 }

@@ -96,5 +96,10 @@ export type GameEvent =
   | { type: 'enemyShot'; position: Vec2 }
   | { type: 'enemyHit'; position: Vec2; damage: number }
   | { type: 'enemyDestroyed'; position: Vec2; score: number }
+  | { type: 'bossSpawned'; position: Vec2 }
+  | { type: 'bossPhase'; position: Vec2; phase: number }
+  | { type: 'bossShot'; position: Vec2 }
+  | { type: 'bossHit'; position: Vec2; damage: number }
+  | { type: 'bossDefeated'; position: Vec2; score: number }
   | { type: 'playerHit'; position: Vec2; damage: number }
   | { type: 'playerDestroyed'; position: Vec2 };

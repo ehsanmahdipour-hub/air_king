@@ -5,10 +5,11 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 9 — Aircraft System & Shop.** Account auth, five data-driven
-> levels, centralized scoring/reward, server-authoritative progression, upgrades
-> and a data-driven aircraft roster with ownership, purchase and equipping that
-> drives the gameplay loadout. Later phases add bosses.
+> Status: **Phase 10 — Boss System.** Account auth, five data-driven levels,
+> centralized scoring/reward, server-authoritative progression, upgrades,
+> aircraft and a reusable boss framework with a boss health bar, multi-phase
+> attacks and level integration (bosses on selected levels). Later phases add
+> settings/UX polish and content expansion.
 
 ## Overview
 

@@ -1,3 +1,4 @@
+import { getBoss } from '../config/bosses';
 import { getEnemy } from '../config/enemies';
 import type { LevelConfig } from '../config/levels';
 import type { ScoreConfig } from '../config/scoring';
@@ -66,6 +67,11 @@ export function maxAchievableScore(level: LevelConfig, config: ScoreConfig): num
 
   for (const section of level.obstacleSections) {
     total += scoreForEnemyDestroyed(getEnemy(section.enemyTypeId), config) * section.count;
+  }
+
+  if (level.boss) {
+    const boss = getBoss(level.boss.bossId);
+    total += scoreForBossDamage(boss.maxHealth, config) + Math.max(0, Math.round(boss.scoreValue));
   }
 
   return total;

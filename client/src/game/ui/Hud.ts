@@ -6,6 +6,7 @@ import { DEPTH } from '../config';
 const BAR_WIDTH = 180;
 const BAR_HEIGHT = 14;
 const PROGRESS_WIDTH = 220;
+const BOSS_BAR_WIDTH = 360;
 
 /**
  * Heads-up display. Reads the world each frame and never mutates it. Overlays
@@ -19,6 +20,9 @@ export class Hud {
   private readonly scoreText: Phaser.GameObjects.Text;
   private readonly progressBar: Phaser.GameObjects.Rectangle;
   private readonly progressFill: Phaser.GameObjects.Rectangle;
+  private readonly bossName: Phaser.GameObjects.Text;
+  private readonly bossBar: Phaser.GameObjects.Rectangle;
+  private readonly bossFill: Phaser.GameObjects.Rectangle;
   private readonly overlay: Phaser.GameObjects.Rectangle;
   private readonly overlayTitle: Phaser.GameObjects.Text;
   private readonly overlayDetail: Phaser.GameObjects.Text;
@@ -53,6 +57,26 @@ export class Hud {
       .text(width - 20, 18, 'Score: 0', baseStyle)
       .setOrigin(1, 0)
       .setDepth(DEPTH.hud + 1);
+
+    this.bossName = scene.add
+      .text(width / 2, 6, '', {
+        fontFamily: 'monospace',
+        fontSize: '13px',
+        color: '#ff9a9a',
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(DEPTH.hud + 1)
+      .setVisible(false);
+    this.bossBar = scene.add
+      .rectangle(width / 2 - BOSS_BAR_WIDTH / 2, 26, BOSS_BAR_WIDTH, BAR_HEIGHT, 0x2a1111)
+      .setOrigin(0, 0)
+      .setDepth(DEPTH.hud)
+      .setVisible(false);
+    this.bossFill = scene.add
+      .rectangle(width / 2 - BOSS_BAR_WIDTH / 2, 26, BOSS_BAR_WIDTH, BAR_HEIGHT, 0xff6b6b)
+      .setOrigin(0, 0)
+      .setDepth(DEPTH.hud + 1)
+      .setVisible(false);
 
     this.overlay = scene.add
       .rectangle(width / 2, height / 2, width, height, 0x05070f, 0.72)
@@ -94,6 +118,18 @@ export class Hud {
 
     const progress = computeProgress(world);
     this.progressFill.setDisplaySize(Math.max(0.001, PROGRESS_WIDTH * progress), BAR_HEIGHT);
+
+    const boss = world.boss;
+    if (boss) {
+      const ratio = boss.maxHealth > 0 ? boss.health / boss.maxHealth : 0;
+      this.bossName.setText(
+        `${boss.config.displayName} — phase ${boss.phaseIndex + 1}/${boss.config.phases.length}`,
+      );
+      this.bossFill.setDisplaySize(Math.max(0.001, BOSS_BAR_WIDTH * ratio), BAR_HEIGHT);
+      this.setBossVisible(true);
+    } else {
+      this.setBossVisible(false);
+    }
   }
 
   showOverlay(title: string, detail: string, color = '#7fd1ff'): void {
@@ -130,6 +166,9 @@ export class Hud {
     this.scoreText.destroy();
     this.progressBar.destroy();
     this.progressFill.destroy();
+    this.bossName.destroy();
+    this.bossBar.destroy();
+    this.bossFill.destroy();
     this.overlay.destroy();
     this.overlayTitle.destroy();
     this.overlayDetail.destroy();
@@ -139,6 +178,12 @@ export class Hud {
     this.overlay.setVisible(visible);
     this.overlayTitle.setVisible(visible);
     this.overlayDetail.setVisible(visible);
+  }
+
+  private setBossVisible(visible: boolean): void {
+    this.bossName.setVisible(visible);
+    this.bossBar.setVisible(visible);
+    this.bossFill.setVisible(visible);
   }
 }
 

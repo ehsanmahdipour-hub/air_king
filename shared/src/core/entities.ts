@@ -1,4 +1,5 @@
 import type { EconomyConfig } from '../config/economy';
+import type { BossConfig } from '../config/bosses';
 import type { EnemyConfig } from '../config/enemies';
 import type { DifficultyModifiers, LevelConfig } from '../config/levels';
 import type { ScoreConfig } from '../config/scoring';
@@ -57,6 +58,27 @@ export interface ProjectileState {
   alive: boolean;
 }
 
+export interface BossState {
+  id: number;
+  bossId: string;
+  config: BossConfig;
+  position: Vec2;
+  radius: number;
+  health: number;
+  maxHealth: number;
+  phaseIndex: number;
+  /** Index of the next attack pattern to use within the phase. */
+  attackIndex: number;
+  /** Seconds the boss has been active, used by movement behaviors. */
+  age: number;
+  attackCooldown: number;
+  /** True while the boss descends into the arena and cannot attack. */
+  entering: boolean;
+  /** Movement direction (+1 / -1) for sweep and hover behaviors. */
+  direction: number;
+  alive: boolean;
+}
+
 /** Movement intent for a single simulation step. */
 export interface InputState {
   /** Keyboard movement vector, each axis in [-1, 1]. */
@@ -81,6 +103,12 @@ export interface DirectorState {
   totalEnemies: number;
   enemiesSpawned: number;
   enemiesDestroyed: number;
+  /** True once the level's boss has been spawned. */
+  bossSpawned: boolean;
+  /** True once the level's boss has been defeated. */
+  bossDefeated: boolean;
+  /** Seconds until the boss spawns; -1 until the trigger conditions are met. */
+  bossSpawnTimer: number;
 }
 
 export interface World {
@@ -103,6 +131,8 @@ export interface World {
   loadout: ResolvedLoadout;
   player: PlayerState;
   enemies: EnemyState[];
+  /** Active boss, or null when the level has none or it is defeated. */
+  boss: BossState | null;
   projectiles: ProjectileState[];
   /** Events produced during the last step, consumed by the presentation layer. */
   events: GameEvent[];

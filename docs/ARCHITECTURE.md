@@ -176,6 +176,26 @@ testable and replaceable.
   client passes `bridge.aircraftId` into `createWorld`, so equipping changes the
   loadout on the next level load/restart.
 
+### Boss system
+
+- Bosses are data in `config/bosses.ts`: health, contact damage, defeat score, a
+  projectile spec, entry position and an ordered list of phases. Each phase
+  selects a movement behavior, a list of attack patterns, an attack interval and
+  a speed. `assertBossConfigs` validates them at load.
+- The framework in `core/bosses` keeps the concepts separate: `movements.ts`
+  (sweep/hover/track) and `attacks.ts` (spread/aimed-burst/radial) are registries
+  of small functions selected by id. `runBossMovement`/`runBossAttack` dispatch
+  them; a new boss or pattern is an addition, never a giant boss class.
+- `core/systems/boss.ts` owns spawning, entry, phase resolution (from health
+  fraction, emitting a `bossPhase` event), attack timing and defeat (awarding the
+  boss score). The simulation exposes one `world.boss` slot.
+- Levels reference a boss by id (`LevelConfig.boss`); the level director spawns
+  it once all waves and obstacle sections are emitted, after a configured delay.
+  `isLevelCleared` requires `director.bossDefeated` for levels that have a boss.
+- The client renders the boss sprite and a dedicated boss health bar, and maps
+  boss events to effects. The server's `maxAchievableScore` includes boss damage
+  and defeat score so submitted scores are validated.
+
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
@@ -193,13 +213,14 @@ background colour and star tint.
 
 ## Current phase
 
-Phase 9 adds the aircraft system and shop: a data-driven aircraft roster, owned
-and equipped aircraft persisted per user, server-validated purchase and equip
-endpoints, an aircraft shop UI, and loadout resolution that applies the equipped
-aircraft's stats to gameplay. Phase 8 added upgrades, Phase 7 backend
-persistence, Phase 6 scoring/rewards, Phase 5 the level system, Phase 4 the
-combat/enemy system, Phase 3 the core gameplay prototype, Phase 2 authentication
-and Phase 1 the project skeleton; bosses arrive in a later phase.
+Phase 10 adds a reusable boss framework: data-driven bosses with phases,
+separate movement and attack pattern registries, a boss state/health/damage/
+death/reward system, a boss health bar and level integration (selected levels
+reference a boss, and the level only completes once it is defeated). Phase 9
+added the aircraft shop, Phase 8 upgrades, Phase 7 backend persistence, Phase 6
+scoring/rewards, Phase 5 the level system, Phase 4 the combat/enemy system,
+Phase 3 the core gameplay prototype, Phase 2 authentication and Phase 1 the
+project skeleton; settings/UX and content expansion follow.
 
 
 ## Server authority and trust model

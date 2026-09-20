@@ -2,7 +2,8 @@ import { applyArmor, applyDamage, isDefeated } from '../combat';
 import { compact } from '../collections';
 import type { EnemyState, World } from '../entities';
 import { circlesOverlap } from '../math';
-import { addScore, scoreForEnemyDestroyed } from '../scoring';
+import { addScore, scoreForBossDamage, scoreForEnemyDestroyed } from '../scoring';
+import { defeatBoss } from './boss';
 
 export function resolveCollisions(world: World): void {
   resolvePlayerProjectileHits(world);
@@ -18,6 +19,8 @@ function resolvePlayerProjectileHits(world: World): void {
     if (!projectile.alive || projectile.owner !== 'player') {
       continue;
     }
+
+    let hit = false;
 
     for (const enemy of world.enemies) {
       if (!enemy.alive) {
@@ -41,8 +44,42 @@ function resolvePlayerProjectileHits(world: World): void {
         });
       }
 
+      hit = true;
       break;
     }
+
+    if (hit) {
+      continue;
+    }
+
+    resolveBossProjectileHit(world, projectile);
+  }
+}
+
+function resolveBossProjectileHit(
+  world: World,
+  projectile: { alive: boolean; position: { x: number; y: number }; radius: number; damage: number },
+): void {
+  const boss = world.boss;
+  if (!boss || !boss.alive) {
+    return;
+  }
+
+  if (!circlesOverlap(projectile.position, projectile.radius, boss.position, boss.radius)) {
+    return;
+  }
+
+  projectile.alive = false;
+  boss.health = applyDamage(boss.health, projectile.damage);
+  world.score = addScore(world.score, scoreForBossDamage(projectile.damage, world.scoreConfig));
+  world.events.push({
+    type: 'bossHit',
+    position: { ...projectile.position },
+    damage: projectile.damage,
+  });
+
+  if (isDefeated(boss.health)) {
+    defeatBoss(world);
   }
 }
 
@@ -102,6 +139,33 @@ function resolvePlayerContact(world: World): void {
       damage,
     });
   }
+
+  resolveBossContact(world);
+}
+
+function resolveBossContact(world: World): void {
+  const { player } = world;
+  const boss = world.boss;
+  if (!boss || !boss.alive) {
+    return;
+  }
+
+  if (!circlesOverlap(boss.position, boss.radius, player.position, player.radius)) {
+    return;
+  }
+
+  if (player.invulnerableFor > 0) {
+    return;
+  }
+
+  const damage = applyArmor(boss.config.contactDamage, player.armor);
+  player.health = applyDamage(player.health, damage);
+  player.invulnerableFor = world.loadout.invulnerabilitySeconds;
+  world.events.push({
+    type: 'playerHit',
+    position: { ...player.position },
+    damage,
+  });
 }
 
 function destroyEnemy(world: World, enemy: EnemyState): void {

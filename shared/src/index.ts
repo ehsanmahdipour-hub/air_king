@@ -54,6 +54,17 @@ export {
   type TurretConfig,
 } from './config/enemies';
 export {
+  DREADNOUGHT,
+  BOSSES,
+  getBoss,
+  isBossId,
+  assertBossConfigs,
+  type BossConfig,
+  type BossPhaseConfig,
+  type BossMovementId,
+  type BossAttackId,
+} from './config/bosses';
+export {
   STARTER_AIRCRAFT,
   INTERCEPTOR,
   FORTRESS,
@@ -119,7 +130,16 @@ export {
 // Pure game rules
 export { clamp, length, normalize, distance, circlesOverlap, angleBetween, randomRange } from './core/math';
 export { applyDamage, applyArmor, isDefeated } from './core/combat';
-export { resolveLoadout, type ResolvedLoadout } from './core/loadout';
+export { resolveLoadout, type ResolvedLoadout, type LoadoutInput } from './core/loadout';
+export {
+  runBossMovement,
+  runBossAttack,
+  type BossMovementContext,
+  type BossMovementFn,
+  type BossAttackContext,
+  type BossAttackFn,
+} from './core/bosses';
+export { spawnBoss, updateBoss, defeatBoss } from './core/systems/boss';
 export { addScore, scoreForEnemyDestroyed, scoreForBossDamage, scoreForBossDefeat, scoreForSpecial, maxAchievableScore } from './core/scoring';
 export { createProjectiles, type ProjectileSpawn } from './core/weapons';
 export { formationSpawnPosition, type FormationParams } from './core/formations';
@@ -142,4 +162,5 @@ export {
   type EnemyState,
   type ProjectileState,
   type ProjectileOwner,
+  type BossState,
 } from './core/world';

@@ -148,10 +148,25 @@ increment, tested, reviewed and merged before the next begins.
 - Verified: shop display, purchase, equip, gameplay effect and persistence after
   logout/login.
 
-## Phase 10 preview (next, pending approval)
+## Phase 10 acceptance criteria (complete)
 
-Boss system: boss architecture, a dedicated health bar, multiple attack patterns
-and phases, and boss rewards assigned to selected campaign levels.
+- Reusable boss framework with separate concepts: boss state, health, movement
+  behavior, attack pattern, phases and reward.
+- One initial boss (Dreadnought) with distinct movement, at least two attack
+  patterns, three phases, a health bar and a death/reward sequence.
+- Boss health bar, damage handling, phase transitions, attack state, death and
+  reward covered by tests.
+- Level integration: selected levels reference a boss by id; the boss spawns
+  after the waves; the level completes only once the boss is defeated.
+- Server score validation includes boss damage and defeat score.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified in a browser: boss spawn, health bar, attack patterns, phase
+  transitions, defeat, reward and level completion.
+
+## Phase 11 preview (next, pending approval)
+
+Settings & UX: control selection, shooting mode, audio settings, pause menu,
+user profile and logout, plus UX improvements.
 
 
 

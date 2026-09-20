@@ -11,6 +11,7 @@ export const TEXTURES = {
   bomber: 'enemy-bomber',
   mine: 'enemy-mine',
   turret: 'enemy-turret',
+  boss: 'boss',
   playerBullet: 'player-bullet',
   enemyBullet: 'enemy-bullet',
   spark: 'spark',
@@ -25,8 +26,17 @@ const ENEMY_TEXTURES: Record<string, string> = {
   turret: TEXTURES.turret,
 };
 
+/** Maps a boss id to its sprite texture. */
+const BOSS_TEXTURES: Record<string, string> = {
+  dreadnought: TEXTURES.boss,
+};
+
 export function enemyTexture(typeId: string): string {
   return ENEMY_TEXTURES[typeId] ?? TEXTURES.fighter;
+}
+
+export function bossTexture(bossId: string): string {
+  return BOSS_TEXTURES[bossId] ?? TEXTURES.boss;
 }
 
 export function createGameTextures(scene: Phaser.Scene): void {
@@ -35,6 +45,7 @@ export function createGameTextures(scene: Phaser.Scene): void {
   createBomberTexture(scene);
   createMineTexture(scene);
   createTurretTexture(scene);
+  createBossTexture(scene);
   createPlayerBulletTexture(scene);
   createEnemyBulletTexture(scene);
   createSparkTexture(scene);
@@ -108,6 +119,23 @@ function createTurretTexture(scene: Phaser.Scene): void {
     graphics.fillRect(size * 0.12, size * 0.12, size * 0.76, size * 0.58);
     graphics.fillStyle(0xcbd5e1, 1);
     graphics.fillCircle(size / 2, size * 0.36, size * 0.16);
+  });
+}
+
+function createBossTexture(scene: Phaser.Scene): void {
+  const size = 96;
+  const center = size / 2;
+  draw(scene, TEXTURES.boss, size, size, (graphics) => {
+    graphics.fillStyle(0x7a1f2b, 1);
+    graphics.fillRect(center - 4, 0, 8, size * 0.22);
+    graphics.fillRect(center - 4, size * 0.78, 8, size * 0.22);
+    graphics.fillRect(0, center - 4, size * 0.22, 8);
+    graphics.fillRect(size * 0.78, center - 4, size * 0.22, 8);
+    graphics.fillCircle(center, center, size * 0.42);
+    graphics.fillStyle(0xb33a4a, 1);
+    graphics.fillCircle(center, center, size * 0.3);
+    graphics.fillStyle(0xffd166, 1);
+    graphics.fillCircle(center, center, size * 0.12);
   });
 }
 

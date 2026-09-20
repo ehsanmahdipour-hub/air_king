@@ -77,4 +77,11 @@ describe('maxAchievableScore', () => {
     expect(survival).toBeDefined();
     expect(maxAchievableScore(survival!, DEFAULT_SCORE_CONFIG)).toBeNull();
   });
+
+  it('includes the boss damage and defeat score for boss levels', () => {
+    const bossLevel = LEVELS.find((level) => level.boss !== undefined);
+    expect(bossLevel).toBeDefined();
+    // Level 3: 2120 (waves) + 200 (obstacles) + 1000 (bonus) + 4200 (boss).
+    expect(maxAchievableScore(bossLevel!, DEFAULT_SCORE_CONFIG)).toBe(7520);
+  });
 });

@@ -242,6 +242,23 @@ export class GameScene extends Phaser.Scene {
           this.effects.explosionAt(event.position, 30);
           this.cameras.main.shake(300, 0.01);
           break;
+        case 'bossSpawned':
+          this.cameras.main.shake(200, 0.004);
+          break;
+        case 'bossPhase':
+          this.effects.explosionAt(event.position, 10);
+          this.cameras.main.shake(160, 0.006);
+          break;
+        case 'bossShot':
+          this.effects.muzzleAt(event.position);
+          break;
+        case 'bossHit':
+          this.effects.impactAt(event.position);
+          break;
+        case 'bossDefeated':
+          this.effects.explosionAt(event.position, 44);
+          this.cameras.main.shake(320, 0.012);
+          break;
         case 'levelStart':
         case 'levelComplete':
           break;

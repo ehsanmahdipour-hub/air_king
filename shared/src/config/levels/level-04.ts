@@ -46,5 +46,6 @@ export const LEVEL_04: LevelConfig = {
     { enemyTypeId: 'mine', count: 4, formation: 'line', interval: 0.6, startDelay: 3 },
     { enemyTypeId: 'mine', count: 4, formation: 'random', interval: 0.8, startDelay: 9 },
   ],
+  boss: { bossId: 'dreadnought', spawnDelaySeconds: 1.5 },
   reward: { completionBonus: 1500 },
 };

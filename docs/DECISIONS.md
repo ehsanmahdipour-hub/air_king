@@ -312,3 +312,32 @@ coin deduction inside one transaction.
 keeps UI affordances and server rules consistent, while the row-first ordering
 plus unique constraint and conditional deduction makes duplicate or racing
 purchases safe and prevents charging twice.
+
+## ADR-0034: Bosses are data over a phase/movement/attack framework
+
+**Decision.** Boss definitions live in `config/bosses.ts` as an ordered list of
+phases; each phase selects a movement behavior and a list of attack patterns by
+id. The implementations are small registries in `core/bosses/movements.ts` and
+`core/bosses/attacks.ts`, dispatched by `runBossMovement`/`runBossAttack`.
+**Why.** The requirement forbids one giant boss class. Splitting state, health,
+movement, attacks, phases and reward means a new boss (or a new pattern) is an
+addition, and the phase data drives behavior without engine changes.
+
+## ADR-0035: Boss phase is derived from health fraction
+
+**Decision.** A boss's phase is resolved each step from its remaining health
+fraction against per-phase thresholds; crossing a threshold emits a `bossPhase`
+event and resets the attack cycle. `untilHealthFraction` is the value below which
+a phase ends, and the last phase ends at 0.
+**Why.** Deriving the phase from health keeps the boss stateless with respect to
+transitions (no duplicated "already transitioned" bookkeeping), makes the
+thresholds pure data, and naturally supports any number of phases.
+
+## ADR-0036: Levels reference a boss; completion requires defeating it
+
+**Decision.** `LevelConfig.boss` holds a boss id and an optional spawn delay. The
+level director spawns the boss after all waves and obstacle sections are emitted;
+`isLevelCleared` additionally requires `director.bossDefeated` for boss levels.
+**Why.** The level engine stays boss-agnostic (it only knows a reference id), so
+which levels have bosses is content. Tying completion to the defeat flag makes a
+boss a real gate without hard-coding a specific boss anywhere in the engine.

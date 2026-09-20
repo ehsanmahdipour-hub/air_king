@@ -12,6 +12,7 @@ import { clamp } from './math';
 import { calculateCoins } from './rewards';
 import { addScore } from './scoring';
 import { resolveCollisions } from './systems/collisions';
+import { updateBoss } from './systems/boss';
 import { updateEnemies } from './systems/enemies';
 import { updatePlayer } from './systems/player';
 import { updatePlayerWeapon } from './systems/playerWeapon';
@@ -19,6 +20,7 @@ import { updateProjectiles } from './systems/projectiles';
 import type { LevelResult } from '../types';
 
 export type {
+  BossState,
   DirectorState,
   EnemyState,
   GameStatus,
@@ -64,6 +66,7 @@ export function createWorld(level: LevelConfig = LEVELS[0], options: WorldOption
       invulnerableFor: 0,
     },
     enemies: [],
+    boss: null,
     projectiles: [],
     events: [],
     nextId: 1,
@@ -106,6 +109,7 @@ export function stepWorld(world: World, input: InputState, deltaSeconds: number)
   updateProjectiles(world, delta);
   updateSpawns(world, delta);
   updateEnemies(world, delta);
+  updateBoss(world, delta);
   resolveCollisions(world);
 
   if (isDefeated(world.player.health)) {
