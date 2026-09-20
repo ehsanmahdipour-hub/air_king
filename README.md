@@ -5,10 +5,10 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 8 — Upgrade System.** Account auth, five data-driven levels,
-> centralized scoring/reward, server-authoritative progression and a
-> config-driven upgrade system (weapon and aircraft upgrades with coins). Later
-> phases add the aircraft shop and bosses.
+> Status: **Phase 9 — Aircraft System & Shop.** Account auth, five data-driven
+> levels, centralized scoring/reward, server-authoritative progression, upgrades
+> and a data-driven aircraft roster with ownership, purchase and equipping that
+> drives the gameplay loadout. Later phases add bosses.
 
 ## Overview
 
@@ -147,6 +147,9 @@ httpOnly refresh cookie.
 | `POST` | `/api/v1/progress/levels/:levelId/complete` | Bearer | Submit a level score; server validates and persists the reward |
 | `GET` | `/api/v1/upgrades` | Bearer | Return the player's upgrade levels and coin balance |
 | `POST` | `/api/v1/upgrades/:upgradeId/purchase` | Bearer | Buy the next upgrade level; server validates price and balance |
+| `GET` | `/api/v1/aircraft` | Bearer | Return ownership/equipped state for every aircraft |
+| `POST` | `/api/v1/aircraft/:aircraftId/purchase` | Bearer | Buy an aircraft; server validates price and balance |
+| `POST` | `/api/v1/aircraft/:aircraftId/equip` | Bearer | Equip an owned aircraft |
 | `GET` | `/api/health` | – | Server health |
 | `GET` | `/api/health/db` | – | Database connectivity |
 

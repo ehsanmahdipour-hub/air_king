@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { BOMBER, FIGHTER, MINE, TURRET, getEnemy } from '../config/enemies';
 import { DEFAULT_ECONOMY_CONFIG } from '../config/economy';
 import { LEVELS, type LevelConfig } from '../config/levels';
-import { STARTER_AIRCRAFT } from '../config/player';
+import { STARTER_AIRCRAFT } from '../config/aircraft';
 import { DEFAULT_SCORE_CONFIG } from '../config/scoring';
 import { calculateCoins } from './rewards';
 import {

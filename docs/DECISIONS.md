@@ -281,3 +281,34 @@ speed, weapon damage/speed/count/fire rate and flat armor. Armor is applied via
 **Why.** Keeping upgrade → stat math in one pure shared module means gameplay,
 previews and tests agree, and the simulation never imports upgrade shop code. A
 flat armor model is simple to reason about and cannot fully negate a hit.
+
+## ADR-0031: Data-driven aircraft roster
+
+**Decision.** Aircraft are declared in `config/aircraft.ts` (stats, weapon id,
+ability placeholder, price, unlock kind, availability) and validated at load.
+The equipped aircraft's config is resolved into the same `ResolvedLoadout` as
+upgrades, so gameplay never branches on a specific aircraft.
+**Why.** The requirement forbids a separate gameplay implementation per aircraft.
+One loadout resolver plus data means new aircraft are content, and the shop UI
+and server share the same stats and prices.
+
+## ADR-0032: Ownership rows plus an equipped id on the profile
+
+**Decision.** The default aircraft is owned implicitly; purchased aircraft have a
+`PlayerAircraft` row (unique per user/aircraft); the equipped aircraft id lives on
+`PlayerProfile`.
+**Why.** Ownership and equipment are different concerns and different lifecycles
+(a player owns many but equips one). A unique row prevents duplicate purchases at
+the database level, and a single equipped id makes "what am I flying" trivial to
+read and to apply to the loadout.
+
+## ADR-0033: Server-authoritative aircraft purchases with a shared eligibility check
+
+**Decision.** `canPurchaseAircraft` is a pure shared function (availability,
+purchasable, already owned, affordable) used by the UI for button state and by the
+server for validation. The server creates the ownership row before a conditional
+coin deduction inside one transaction.
+**Why.** The client must not set prices or grant ownership. Sharing the check
+keeps UI affordances and server rules consistent, while the row-first ordering
+plus unique constraint and conditional deduction makes duplicate or racing
+purchases safe and prevents charging twice.

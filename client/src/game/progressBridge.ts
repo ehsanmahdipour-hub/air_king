@@ -14,6 +14,8 @@ export interface GameProgressBridge {
   currentLevelId?: string;
   /** Player upgrade levels applied to the loadout. */
   upgradeLevels?: UpgradeLevels;
+  /** Equipped aircraft id applied to the loadout. */
+  aircraftId?: string;
   /**
    * Submits a level completion to the server. Returns the server response, or
    * `null` when it could not be saved (e.g. offline).

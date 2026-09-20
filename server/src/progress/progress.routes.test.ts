@@ -90,6 +90,7 @@ describe('progress routes', () => {
         totalScore: 0,
         highestScore: 0,
         currentLevelId: 'level-01',
+        equippedAircraftId: 'starter',
       });
       expect(body.levels).toEqual([]);
     });
@@ -227,6 +228,7 @@ describe('progress routes', () => {
         totalScore: 0,
         highestScore: 0,
         currentLevelId: 'level-01',
+        equippedAircraftId: 'starter',
       });
       expect(response.json().levels).toEqual([]);
     });

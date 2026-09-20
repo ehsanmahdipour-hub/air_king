@@ -1,11 +1,14 @@
 import {
   createWorld,
+  getAircraft,
   getNextLevelId,
   isLevelUnlocked,
   stepWorld,
+  type AircraftConfig,
   type CompleteLevelResponse,
   type GameEvent,
   type LevelConfig,
+  type UpgradeLevels,
   type World,
 } from '@game/shared';
 import Phaser from 'phaser';
@@ -95,7 +98,7 @@ export class GameScene extends Phaser.Scene {
 
   private loadLevel(index: number): void {
     this.level = CAMPAIGN[index];
-    this.world = createWorld(this.level, { upgrades: this.bridge?.upgradeLevels });
+    this.world = createWorld(this.level, this.loadoutOptions());
     this.completionSynced = false;
     this.serverReward = null;
 
@@ -105,11 +108,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   private restart(): void {
-    this.world = createWorld(this.level, { upgrades: this.bridge?.upgradeLevels });
+    this.world = createWorld(this.level, this.loadoutOptions());
     this.completionSynced = false;
     this.serverReward = null;
     this.worldRenderer.reset();
     this.hud.hideOverlay();
+  }
+
+  /** Aircraft and upgrades are read from the bridge when a world is created. */
+  private loadoutOptions(): { aircraft?: AircraftConfig; upgrades?: Partial<UpgradeLevels> } {
+    const aircraftId = this.bridge?.aircraftId;
+    return {
+      aircraft: aircraftId ? getAircraft(aircraftId) : undefined,
+      upgrades: this.bridge?.upgradeLevels,
+    };
   }
 
   private goToNextLevel(): void {

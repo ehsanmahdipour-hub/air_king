@@ -157,6 +157,25 @@ testable and replaceable.
   (e.g. insufficient coins). Purchases update the profile and the game bridge's
   `upgradeLevels`, which `createWorld` uses on the next level load/restart.
 
+### Aircraft system and shop
+
+- Aircraft definitions live in `config/aircraft.ts`: id, name, description,
+  base stats (health, armor, speed, fire power, fire rate, radius,
+  invulnerability), weapon id, an ability placeholder, price, unlock kind and
+  availability. `assertAircraftConfigs` validates them at load.
+- Ownership: the default aircraft is always owned; purchased aircraft have a
+  `PlayerAircraft` row. The equipped aircraft id is stored on `PlayerProfile`.
+- `GET /api/v1/aircraft` returns ownership/equipped state for every aircraft.
+  `POST /api/v1/aircraft/:id/purchase` and `.../equip` are server-authoritative:
+  the server checks the id, availability, that it is purchasable, that it is not
+  already owned and that coins cover the price, then creates the ownership row
+  (unique constraint) before a conditional coin deduction. `canPurchaseAircraft`
+  is the shared pure check used by the UI and the server.
+- `resolveLoadout({ aircraft, upgrades })` combines the equipped aircraft's base
+  stats with upgrades, so one gameplay implementation serves every aircraft. The
+  client passes `bridge.aircraftId` into `createWorld`, so equipping changes the
+  loadout on the next level load/restart.
+
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
@@ -174,13 +193,13 @@ background colour and star tint.
 
 ## Current phase
 
-Phase 8 adds the upgrade system: config-driven weapon and aircraft upgrades with
-per-level values and costs, a shared `resolveLoadout` that applies them to
-gameplay (including armor), server-validated purchases persisted per user, and an
-upgrades UI. Phase 7 added backend persistence, Phase 6 scoring/rewards, Phase 5
-the level system, Phase 4 the combat/enemy system, Phase 3 the core gameplay
-prototype, Phase 2 authentication and Phase 1 the project skeleton; the aircraft
-shop and bosses arrive in later phases.
+Phase 9 adds the aircraft system and shop: a data-driven aircraft roster, owned
+and equipped aircraft persisted per user, server-validated purchase and equip
+endpoints, an aircraft shop UI, and loadout resolution that applies the equipped
+aircraft's stats to gameplay. Phase 8 added upgrades, Phase 7 backend
+persistence, Phase 6 scoring/rewards, Phase 5 the level system, Phase 4 the
+combat/enemy system, Phase 3 the core gameplay prototype, Phase 2 authentication
+and Phase 1 the project skeleton; bosses arrive in a later phase.
 
 
 ## Server authority and trust model

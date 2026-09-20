@@ -1,5 +1,6 @@
 import {
   DEFAULT_UPGRADE_LEVELS,
+  type AircraftStateData,
   type PlayerProfileData,
   type UpgradeId,
   type UpgradeLevels,
@@ -9,6 +10,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { AuthForm } from './auth/AuthForm';
 import { useAuth } from './auth/AuthContext';
 import { me } from './auth/authApi';
+import { equipAircraft, getAircraft, purchaseAircraft } from './aircraft/aircraftApi';
+import { AircraftPanel } from './aircraft/AircraftPanel';
 import { GameStage } from './GameStage';
 import { completeLevel, getProgress } from './progress/progressApi';
 import { getUpgrades, purchaseUpgrade } from './upgrades/upgradesApi';
@@ -30,8 +33,8 @@ export function App() {
       </main>
 
       <footer className="app__footer">
-        Phase 8 — upgrades · move with WASD or the mouse · fire with Space or click · press R to
-        replay · press N for the next level when complete
+        Phase 9 — aircraft shop · move with WASD or the mouse · fire with Space or click · press R
+        to replay · press N for the next level when complete
       </footer>
     </div>
   );
@@ -65,16 +68,19 @@ function SessionControls() {
 }
 
 /**
- * Authenticated view. Owns progression and upgrade networking: it loads the
- * player's persisted state, exposes it in the header, renders the upgrade shop
- * and injects a bridge into the game so completions are validated and saved.
+ * Authenticated view. Owns progression, upgrade and aircraft networking: it
+ * loads the player's persisted state, renders the shop panels and injects a
+ * bridge into the game so completions are validated and saved and the equipped
+ * aircraft/upgrades drive the loadout.
  */
 function AccountView() {
   const { user } = useAuth();
   const [sessionCheck, setSessionCheck] = useState<SessionCheck>('idle');
   const [profile, setProfile] = useState<PlayerProfileData | null>(null);
   const [upgradeLevels, setUpgradeLevels] = useState<UpgradeLevels | null>(null);
+  const [aircraft, setAircraft] = useState<AircraftStateData[] | null>(null);
   const [showUpgrades, setShowUpgrades] = useState(false);
+  const [showAircraft, setShowAircraft] = useState(false);
 
   const bridge = useMemo<GameProgressBridge>(
     () => ({
@@ -93,13 +99,14 @@ function AccountView() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getProgress(), getUpgrades()])
-      .then(([progress, upgrades]) => {
+    Promise.all([getProgress(), getUpgrades(), getAircraft()])
+      .then(([progress, upgrades, roster]) => {
         if (cancelled) {
           return;
         }
         setProfile(progress.profile);
         bridge.currentLevelId = progress.profile.currentLevelId;
+        bridge.aircraftId = progress.profile.equippedAircraftId;
         for (const level of progress.levels) {
           if (level.completed) {
             bridge.completedLevelIds.add(level.levelId);
@@ -110,12 +117,14 @@ function AccountView() {
         }
         setUpgradeLevels(upgrades.upgrades);
         bridge.upgradeLevels = upgrades.upgrades;
+        setAircraft(roster.aircraft);
       })
       .catch(() => {
         if (!cancelled) {
           // Play without persisted progression if the API is unreachable.
           setUpgradeLevels(DEFAULT_UPGRADE_LEVELS);
           bridge.upgradeLevels = DEFAULT_UPGRADE_LEVELS;
+          setAircraft([]);
         }
       });
 
@@ -124,7 +133,14 @@ function AccountView() {
     };
   }, [bridge]);
 
-  async function handlePurchase(upgradeId: UpgradeId): Promise<void> {
+  async function refreshRoster(): Promise<void> {
+    const roster = await getAircraft();
+    setAircraft(roster.aircraft);
+    setProfile(roster.profile);
+    bridge.aircraftId = roster.profile.equippedAircraftId;
+  }
+
+  async function handlePurchaseUpgrade(upgradeId: UpgradeId): Promise<void> {
     const response = await purchaseUpgrade(upgradeId);
     setProfile(response.profile);
     setUpgradeLevels((current) => {
@@ -137,6 +153,16 @@ function AccountView() {
     });
   }
 
+  async function handlePurchaseAircraft(aircraftId: string): Promise<void> {
+    await purchaseAircraft(aircraftId);
+    await refreshRoster();
+  }
+
+  async function handleEquipAircraft(aircraftId: string): Promise<void> {
+    await equipAircraft(aircraftId);
+    await refreshRoster();
+  }
+
   async function verifySession(): Promise<void> {
     setSessionCheck('checking');
     try {
@@ -147,6 +173,8 @@ function AccountView() {
     }
   }
 
+  const ready = upgradeLevels !== null && aircraft !== null;
+
   return (
     <div className="account">
       <div className="account__bar">
@@ -155,9 +183,17 @@ function AccountView() {
         </span>
         {profile && (
           <span className="account__progress">
-            Coins: {profile.coins} · Level: {profile.currentLevelId}
+            Coins: {profile.coins} · Level: {profile.currentLevelId} · Aircraft:{' '}
+            {profile.equippedAircraftId}
           </span>
         )}
+        <button
+          type="button"
+          className="app__button"
+          onClick={() => setShowAircraft((visible) => !visible)}
+        >
+          {showAircraft ? 'Hide aircraft' : 'Aircraft'}
+        </button>
         <button
           type="button"
           className="app__button"
@@ -177,11 +213,24 @@ function AccountView() {
         {sessionCheck === 'error' && <span className="account__error">Protected route failed</span>}
       </div>
 
-      {showUpgrades && profile && upgradeLevels && (
-        <UpgradesPanel profile={profile} levels={upgradeLevels} onPurchase={handlePurchase} />
+      {showAircraft && profile && aircraft && (
+        <AircraftPanel
+          profile={profile}
+          states={aircraft}
+          onPurchase={handlePurchaseAircraft}
+          onEquip={handleEquipAircraft}
+        />
       )}
 
-      {upgradeLevels ? (
+      {showUpgrades && profile && upgradeLevels && (
+        <UpgradesPanel
+          profile={profile}
+          levels={upgradeLevels}
+          onPurchase={handlePurchaseUpgrade}
+        />
+      )}
+
+      {ready ? (
         <GameStage bridge={bridge} />
       ) : (
         <p className="app__message">Loading progression…</p>

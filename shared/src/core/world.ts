@@ -1,6 +1,6 @@
 import { DEFAULT_ECONOMY_CONFIG, type EconomyConfig } from '../config/economy';
+import type { AircraftConfig } from '../config/aircraft';
 import { LEVELS, difficultyModifiers, type LevelConfig } from '../config/levels';
-import { STARTER_AIRCRAFT } from '../config/player';
 import type { UpgradeLevels } from '../config/upgrades';
 import { DEFAULT_SCORE_CONFIG, type ScoreConfig } from '../config/scoring';
 import { isDefeated } from './combat';
@@ -34,13 +34,14 @@ export interface WorldOptions {
   economy?: EconomyConfig;
   /** Overrides the central score config. */
   scoreConfig?: ScoreConfig;
+  /** Equipped aircraft applied to the loadout. */
+  aircraft?: AircraftConfig;
   /** Player upgrade levels applied to the loadout. */
   upgrades?: Partial<UpgradeLevels>;
 }
 
 export function createWorld(level: LevelConfig = LEVELS[0], options: WorldOptions = {}): World {
-  const playerConfig = STARTER_AIRCRAFT;
-  const loadout = resolveLoadout(options.upgrades);
+  const loadout = resolveLoadout({ aircraft: options.aircraft, upgrades: options.upgrades });
 
   return {
     status: 'ready',
@@ -55,7 +56,7 @@ export function createWorld(level: LevelConfig = LEVELS[0], options: WorldOption
     loadout,
     player: {
       position: { ...level.playerStart },
-      radius: playerConfig.radius,
+      radius: loadout.radius,
       health: loadout.maxHealth,
       maxHealth: loadout.maxHealth,
       armor: loadout.armor,

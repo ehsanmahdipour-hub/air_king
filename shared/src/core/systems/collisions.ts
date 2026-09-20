@@ -1,4 +1,3 @@
-import { STARTER_AIRCRAFT } from '../../config/player';
 import { applyArmor, applyDamage, isDefeated } from '../combat';
 import { compact } from '../collections';
 import type { EnemyState, World } from '../entities';
@@ -67,7 +66,7 @@ function resolveEnemyProjectileHits(world: World): void {
 
     const damage = applyArmor(projectile.damage, player.armor);
     player.health = applyDamage(player.health, damage);
-    player.invulnerableFor = STARTER_AIRCRAFT.invulnerabilitySeconds;
+    player.invulnerableFor = world.loadout.invulnerabilitySeconds;
     world.events.push({
       type: 'playerHit',
       position: { ...player.position },
@@ -96,7 +95,7 @@ function resolvePlayerContact(world: World): void {
 
     const damage = applyArmor(enemy.contactDamage, player.armor);
     player.health = applyDamage(player.health, damage);
-    player.invulnerableFor = STARTER_AIRCRAFT.invulnerabilitySeconds;
+    player.invulnerableFor = world.loadout.invulnerabilitySeconds;
     world.events.push({
       type: 'playerHit',
       position: { ...player.position },

@@ -29,6 +29,8 @@ export interface PlayerProfileData {
   highestScore: number;
   /** Furthest unlocked level id. */
   currentLevelId: string;
+  /** Id of the currently equipped aircraft. */
+  equippedAircraftId: string;
 }
 
 export interface LevelProgressData {
@@ -67,6 +69,23 @@ export interface UpgradesResponse {
 export interface PurchaseUpgradeResponse {
   profile: PlayerProfileData;
   upgrade: { id: UpgradeId; level: number };
+}
+
+/** Ownership state of one aircraft for the current player. */
+export interface AircraftStateData {
+  id: string;
+  owned: boolean;
+  equipped: boolean;
+}
+
+export interface AircraftResponse {
+  profile: PlayerProfileData;
+  aircraft: AircraftStateData[];
+}
+
+export interface PurchaseAircraftResponse {
+  profile: PlayerProfileData;
+  aircraft: AircraftStateData;
 }
 
 /** Events emitted by the simulation for the presentation layer to react to. */

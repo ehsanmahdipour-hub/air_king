@@ -25,6 +25,9 @@ export type {
   CompleteLevelResponse,
   UpgradesResponse,
   PurchaseUpgradeResponse,
+  AircraftStateData,
+  AircraftResponse,
+  PurchaseAircraftResponse,
 } from './types';
 
 // Game data (configuration)
@@ -50,7 +53,23 @@ export {
   type MineConfig,
   type TurretConfig,
 } from './config/enemies';
-export { STARTER_AIRCRAFT, type PlayerConfig } from './config/player';
+export {
+  STARTER_AIRCRAFT,
+  INTERCEPTOR,
+  FORTRESS,
+  AIRCRAFT,
+  DEFAULT_AIRCRAFT_ID,
+  getAircraft,
+  isAircraftId,
+  canPurchaseAircraft,
+  assertAircraftConfigs,
+  type AircraftConfig,
+  type AircraftAvailability,
+  type AircraftUnlock,
+  type AircraftAbility,
+  type AircraftPurchaseReason,
+  type AircraftPurchaseCheck,
+} from './config/aircraft';
 export {
   UPGRADES,
   DEFAULT_UPGRADE_LEVELS,

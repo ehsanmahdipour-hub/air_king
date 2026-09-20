@@ -130,10 +130,28 @@ increment, tested, reviewed and merged before the next begins.
 - Verified: display, purchase, coin deduction, gameplay effect and persistence
   after logout/login.
 
-## Phase 9 preview (next, pending approval)
+## Phase 9 acceptance criteria (complete)
 
-Aircraft system and shop: multiple aircraft with configurable stats, unlocking,
-purchasing with coins, equipping and a shop UI.
+- Data-driven aircraft model (id, name, health, armor, speed, fire power, fire
+  rate, ability placeholder, price, unlock requirement, availability) with a
+  small roster and load-time validation.
+- Ownership: default, owned, locked and purchased states persisted per user.
+- Shop UI: aircraft list, stats, price, locked/owned/equipped state, purchase and
+  equip, with server feedback.
+- `PlayerAircraft` persistence and `PlayerProfile.equippedAircraftId`; endpoints
+  `GET /api/v1/aircraft`, `POST .../purchase`, `POST .../equip`.
+- Server validates aircraft existence, purchasability, availability, price,
+  balance and non-ownership.
+- The equipped aircraft's stats drive the gameplay loadout through the shared
+  resolver (no per-aircraft gameplay code).
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified: shop display, purchase, equip, gameplay effect and persistence after
+  logout/login.
+
+## Phase 10 preview (next, pending approval)
+
+Boss system: boss architecture, a dedicated health bar, multiple attack patterns
+and phases, and boss rewards assigned to selected campaign levels.
 
 
 

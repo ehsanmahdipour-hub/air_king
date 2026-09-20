@@ -14,11 +14,13 @@ export function toProfileData(profile: {
   totalScore: number;
   highestScore: number;
   currentLevelId: string;
+  equippedAircraftId: string;
 }): PlayerProfileData {
   return {
     coins: profile.coins,
     totalScore: profile.totalScore,
     highestScore: profile.highestScore,
     currentLevelId: profile.currentLevelId,
+    equippedAircraftId: profile.equippedAircraftId,
   };
 }
