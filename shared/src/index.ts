@@ -33,6 +33,9 @@ export type {
 // Game data (configuration)
 export {
   BASIC_CANNON,
+  DOUBLE_SHOT,
+  SPREAD_SHOT,
+  RAILGUN,
   WEAPONS,
   getWeapon,
   type WeaponConfig,
@@ -43,6 +46,7 @@ export {
   BOMBER,
   MINE,
   TURRET,
+  DIVER,
   ENEMIES,
   getEnemy,
   type EnemyConfig,
@@ -52,9 +56,12 @@ export {
   type BomberConfig,
   type MineConfig,
   type TurretConfig,
+  type DiverConfig,
 } from './config/enemies';
 export {
   DREADNOUGHT,
+  HYDRA,
+  LEVIATHAN,
   BOSSES,
   getBoss,
   isBossId,
@@ -64,7 +71,7 @@ export {
   type BossMovementId,
   type BossAttackId,
 } from './config/bosses';
-export { STARTER_AIRCRAFT, INTERCEPTOR, FORTRESS, AIRCRAFT, DEFAULT_AIRCRAFT_ID, getAircraft, isAircraftId, canPurchaseAircraft, assertAircraftConfigs, type AircraftConfig, type AircraftAvailability, type AircraftUnlock, type AircraftAbility, type AircraftPurchaseReason, type AircraftPurchaseCheck } from './config/aircraft';
+export { STARTER_AIRCRAFT, INTERCEPTOR, FORTRESS, GUNSHIP, PHANTOM, RAPTOR, AIRCRAFT, DEFAULT_AIRCRAFT_ID, getAircraft, isAircraftId, canPurchaseAircraft, assertAircraftConfigs, type AircraftConfig, type AircraftAvailability, type AircraftUnlock, type AircraftAbility, type AircraftPurchaseReason, type AircraftPurchaseCheck } from './config/aircraft';
 export {
   gameSettingsSchema,
   movementControlSchema,
@@ -100,6 +107,8 @@ export {
   getLevelByNumber,
   getLevelIndex,
   getNextLevelId,
+  buildCampaignLevel,
+  buildCampaignLevels,
   ENVIRONMENTS,
   DIFFICULTY_PRESETS,
   difficultyModifiers,

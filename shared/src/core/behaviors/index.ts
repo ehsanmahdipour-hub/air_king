@@ -1,4 +1,5 @@
 import { runBomber } from './bomber';
+import { runDiver } from './diver';
 import { runFighter } from './fighter';
 import { runMine } from './mine';
 import { runTurret } from './turret';
@@ -28,6 +29,9 @@ export function runEnemyBehavior(context: EnemyBehaviorContext): void {
       break;
     case 'turret':
       runTurret(context, config);
+      break;
+    case 'diver':
+      runDiver(context, config);
       break;
   }
 }

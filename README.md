@@ -5,10 +5,10 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 11 — Settings & UX.** Account auth, five data-driven levels,
-> scoring/reward, server-authoritative progression, upgrades, aircraft, bosses,
-> and player settings (controls + audio) with pause, profile, menu navigation
-> and loading/error states. A final content/polish phase remains.
+> Status: **Phase 12 — Content Expansion & Polish (complete).** The full
+> 50-level campaign is playable, with six aircraft, four weapons, five
+> environments, three bosses, five enemy types, synthesized audio, and
+> performance/polish passes.
 
 ## Overview
 
@@ -34,12 +34,29 @@ aircraft shop.
 
 See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the rationale behind each choice.
 
+## Campaign & content
+
+- **50 levels.** Levels 1-5 are hand-authored; levels 6-50 are generated from a
+  difficulty curve and templates in `config/levels/campaign.ts` (no per-level
+  code). Bosses appear only on milestone levels (3, 10, 20, 30, 40, 50) and
+  survival levels every 10th level.
+- **Environments:** Deep Space, Nebula, Dusk Horizon, Aurora Belt, Crimson
+  Expanse — each sets a background colour and star tint, with a two-layer
+  parallax starfield.
+- **Enemies:** fighter, bomber, mine, turret and diver (a committed dive attack).
+- **Aircraft:** six data-driven aircraft (starter, interceptor, fortress,
+  gunship, phantom, raptor), three of them mounting distinct weapons.
+- **Weapons:** basic cannon, double shot, spread shot and railgun.
+- **Bosses:** Dreadnought, Hydra and Leviathan, built from the shared
+  phase/movement/attack framework.
+
 ## Controls
 
 | Action | Input |
 | --- | --- |
-| Move | `W` `A` `S` `D` or move the mouse (the aircraft follows the pointer) |
-| Fire | `Space` or left mouse button |
+| Move | `W` `A` `S` `D` or move the mouse (configurable in Settings) |
+| Fire | `Space` or left mouse button (configurable in Settings) |
+| Pause | `ESC` |
 | Next level (on level complete) | `N` |
 | Replay level / restart (on game over) | `R` |
 

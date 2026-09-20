@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { FORTRESS, INTERCEPTOR, STARTER_AIRCRAFT } from '../config/aircraft';
+import { FORTRESS, GUNSHIP, INTERCEPTOR, PHANTOM, RAPTOR, STARTER_AIRCRAFT } from '../config/aircraft';
 import { DEFAULT_UPGRADE_LEVELS, type UpgradeLevels } from '../config/upgrades';
 import { BASIC_CANNON } from '../config/weapons';
 import { resolveLoadout } from './loadout';
@@ -88,6 +88,14 @@ describe('resolveLoadout', () => {
 
     // (10 + 6) * interceptor firePower 1.15 = 18.4 -> 18
     expect(loadout.weapon.projectile.damage).toBe(18);
+  });
+
+  it('resolves the weapons of the expanded aircraft roster', () => {
+    expect(resolveLoadout({ aircraft: GUNSHIP }).weapon.projectile.count).toBe(3);
+    expect(resolveLoadout({ aircraft: PHANTOM }).weapon.projectile.count).toBe(2);
+    expect(resolveLoadout({ aircraft: RAPTOR }).weapon.projectile.damage).toBe(
+      Math.round(20 * RAPTOR.firePower),
+    );
   });
 
   it('clamps out-of-range upgrade levels', () => {

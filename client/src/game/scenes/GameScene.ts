@@ -332,24 +332,26 @@ export class GameScene extends Phaser.Scene {
         case 'bossDefeated':
           this.effects.explosionAt(event.position, 44);
           this.audio.playSfx('explosion');
+          this.cameras.main.flash(200, 255, 220, 160);
           this.cameras.main.shake(320, 0.012);
           break;
         case 'playerHit':
           this.effects.hitAt(event.position);
           this.audio.playSfx('hit');
+          this.cameras.main.flash(100, 120, 0, 0);
           this.cameras.main.shake(160, 0.006);
           this.worldRenderer.flashPlayer();
           break;
         case 'playerDestroyed':
           this.effects.explosionAt(event.position, 30);
-          this.audio.playSfx('explosion');
+          this.audio.playSfx('gameOver');
           this.cameras.main.shake(300, 0.01);
           break;
         case 'levelStart':
           this.audio.playSfx('jingle');
           break;
         case 'levelComplete':
-          this.audio.playSfx('jingle');
+          this.audio.playSfx('levelComplete');
           break;
       }
     }

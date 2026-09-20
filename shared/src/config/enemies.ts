@@ -6,7 +6,7 @@ import type { ProjectileSpec } from './weapons';
  * enemy is a new config entry; adding a behavior is one small module plus a
  * registry entry, never a change to the enemy engine.
  */
-export type EnemyBehavior = 'fighter' | 'bomber' | 'mine' | 'turret';
+export type EnemyBehavior = 'fighter' | 'bomber' | 'mine' | 'turret' | 'diver';
 
 export interface EnemyBaseConfig {
   id: string;
@@ -42,6 +42,14 @@ export interface MineConfig extends EnemyBaseConfig {
   behavior: 'mine';
 }
 
+export interface DiverConfig extends EnemyBaseConfig {
+  behavior: 'diver';
+  /** Speed used while diving at the player. */
+  diveSpeed: number;
+  /** Horizontal distance at which the diver commits to a dive. */
+  diveRange: number;
+}
+
 export interface TurretConfig extends EnemyBaseConfig {
   behavior: 'turret';
   /** Vertical position where the turret stops and starts firing. */
@@ -51,7 +59,7 @@ export interface TurretConfig extends EnemyBaseConfig {
   projectile: ProjectileSpec;
 }
 
-export type EnemyConfig = FighterConfig | BomberConfig | MineConfig | TurretConfig;
+export type EnemyConfig = FighterConfig | BomberConfig | MineConfig | TurretConfig | DiverConfig;
 
 export const FIGHTER: FighterConfig = {
   id: 'fighter',
@@ -93,6 +101,19 @@ export const MINE: MineConfig = {
   scoreValue: 50,
 };
 
+export const DIVER: DiverConfig = {
+  id: 'diver',
+  displayName: 'Diver',
+  behavior: 'diver',
+  maxHealth: 16,
+  speed: 130,
+  radius: 15,
+  contactDamage: 30,
+  scoreValue: 140,
+  diveSpeed: 420,
+  diveRange: 150,
+};
+
 export const TURRET: TurretConfig = {
   id: 'turret',
   displayName: 'Turret',
@@ -113,6 +134,7 @@ export const ENEMIES: Record<string, EnemyConfig> = {
   [BOMBER.id]: BOMBER,
   [MINE.id]: MINE,
   [TURRET.id]: TURRET,
+  [DIVER.id]: DIVER,
 };
 
 export function getEnemy(id: string): EnemyConfig {

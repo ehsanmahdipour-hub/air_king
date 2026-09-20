@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { FORTRESS, INTERCEPTOR } from '@game/shared';
+import { AIRCRAFT, FORTRESS, INTERCEPTOR } from '@game/shared';
 
 import { buildApp } from '../app';
 import { prisma } from '../db/prisma';
@@ -97,7 +97,7 @@ describe('aircraft routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = response.json();
-      expect(body.aircraft).toHaveLength(3);
+      expect(body.aircraft).toHaveLength(AIRCRAFT.length);
 
       const starter = body.aircraft.find((entry: { id: string }) => entry.id === 'starter');
       expect(starter).toEqual({ id: 'starter', owned: true, equipped: true });

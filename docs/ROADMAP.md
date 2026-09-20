@@ -179,11 +179,29 @@ increment, tested, reviewed and merged before the next begins.
 - Verified: settings persistence, control switching, audio toggles, pause/resume,
   restart, exit to menu, logout and login again.
 
-## Phase 12 preview (next, pending approval)
+## Phase 12 acceptance criteria (complete)
 
-Content expansion & polish: 50 levels, more environments/enemy combinations,
-additional aircraft/weapons, more bosses, improved effects/UI/audio and
-performance work.
+- 50-level campaign: hand-authored levels 1-5 plus generated levels 6-50 from a
+  difficulty curve, with bosses at milestones and survival levels for pacing.
+- Five reusable environments with a two-layer parallax starfield.
+- Six data-driven aircraft, four weapons and five enemy types (including the new
+  `diver` behavior).
+- Three bosses (Dreadnought, Hydra, Leviathan) using the shared framework.
+- Synthesized background music, shooting/hit/explosion/boss/UI sounds, all
+  respecting audio settings and replaceable.
+- Visual polish (parallax depth, camera flash/shake, transitions) and a
+  performance review (pooling, steady-state object counts).
+- Balance kept centralized/data-driven (level curve, upgrade costs, prices,
+  rewards, weapons).
+- Full regression: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass;
+  representative levels (generated mid-level and generated boss level) played
+  end-to-end in a browser with no console errors.
+
+## Status: feature complete
+
+All twelve phases are implemented. Future work is optional: more hand-authored
+milestone levels, additional boss patterns, real audio/art assets, and
+leaderboards (explicitly out of scope so far).
 
 
 

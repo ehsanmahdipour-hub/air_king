@@ -1,6 +1,14 @@
 import { DEFAULT_SETTINGS, type GameSettings } from '@game/shared';
 
-export type SfxName = 'shoot' | 'hit' | 'explosion' | 'boss' | 'jingle';
+export type SfxName =
+  | 'shoot'
+  | 'hit'
+  | 'explosion'
+  | 'boss'
+  | 'jingle'
+  | 'levelComplete'
+  | 'gameOver'
+  | 'ui';
 
 const SFX_FREQUENCIES: Record<SfxName, number> = {
   shoot: 880,
@@ -8,6 +16,9 @@ const SFX_FREQUENCIES: Record<SfxName, number> = {
   explosion: 120,
   boss: 160,
   jingle: 660,
+  levelComplete: 780,
+  gameOver: 150,
+  ui: 520,
 };
 
 const MUSIC_NOTES = [220, 277, 330, 277, 196, 247, 294, 247];

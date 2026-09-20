@@ -19,6 +19,7 @@ import { completeLevel, getProgress } from './progress/progressApi';
 import { ProfilePanel } from './profile/ProfilePanel';
 import { getSettings, updateSettings } from './settings/settingsApi';
 import { SettingsPanel } from './settings/SettingsPanel';
+import { playUiClick, setUiAudioSettings } from './settings/uiSound';
 import { getUpgrades, purchaseUpgrade } from './upgrades/upgradesApi';
 import { UpgradesPanel } from './upgrades/UpgradesPanel';
 import type { GameProgressBridge } from '../game/progressBridge';
@@ -138,6 +139,7 @@ function AccountView() {
       setAircraft(roster.aircraft);
       setSettings(settingsResponse.settings);
       bridge.settings = settingsResponse.settings;
+      setUiAudioSettings(settingsResponse.settings);
       setLoadState('ready');
     } catch {
       setLoadState('error');
@@ -147,6 +149,17 @@ function AccountView() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const handler = (event: MouseEvent): void => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('button')) {
+        playUiClick();
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
 
   async function refreshRoster(): Promise<void> {
     const roster = await getAircraft();
@@ -179,6 +192,7 @@ function AccountView() {
     const response = await updateSettings(next);
     setSettings(response.settings);
     bridge.settings = response.settings;
+    setUiAudioSettings(response.settings);
   }
 
   async function verifySession(): Promise<void> {

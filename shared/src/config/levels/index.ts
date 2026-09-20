@@ -1,3 +1,4 @@
+import { buildCampaignLevels } from './campaign';
 import { LEVEL_01 } from './level-01';
 import { LEVEL_02 } from './level-02';
 import { LEVEL_03 } from './level-03';
@@ -8,6 +9,7 @@ import type { LevelConfig } from './types';
 
 export { ENVIRONMENTS, type EnvironmentId } from './environments';
 export { DIFFICULTY_PRESETS, difficultyModifiers } from './difficulty';
+export { buildCampaignLevel, buildCampaignLevels } from './campaign';
 export { levelConfigSchema, parseLevelConfig, assertLevelSemantics } from './schema';
 export type {
   Arena,
@@ -25,11 +27,18 @@ export type {
 } from './types';
 
 /**
- * Authored levels in campaign order. Every level is validated on load, so a
- * malformed level fails fast. Adding a level is a new file plus an entry here —
- * gameplay code is never touched.
+ * Authored levels 1-5 plus generated levels 6-50. Every level is validated on
+ * load, so malformed content fails fast. Adding or tuning levels is a data
+ * change (authored files or the campaign generator), never engine code.
  */
-const AUTHORED_LEVELS: LevelConfig[] = [LEVEL_01, LEVEL_02, LEVEL_03, LEVEL_04, LEVEL_05];
+const AUTHORED_LEVELS: LevelConfig[] = [
+  LEVEL_01,
+  LEVEL_02,
+  LEVEL_03,
+  LEVEL_04,
+  LEVEL_05,
+  ...buildCampaignLevels(6, 50),
+];
 
 export const LEVELS: LevelConfig[] = AUTHORED_LEVELS.map((level) => parseLevelConfig(level));
 

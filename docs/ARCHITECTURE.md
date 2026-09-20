@@ -219,6 +219,23 @@ testable and replaceable.
   upgrade panels, plus loading and error states with retry. Panels overlay the
   game so opening settings from the pause menu does not destroy the run.
 
+### Campaign generation and content
+
+- Levels 1-5 are hand-authored files; levels 6-50 are produced by
+  `config/levels/campaign.ts` from a difficulty curve (tier, wave count, enemy
+  density, formation variety, expanding enemy roster) plus milestone overrides
+  (boss levels at 3/10/20/30/40/50 and survival levels every 10th). A seeded PRNG
+  keeps generated content deterministic and testable.
+- Environments are reusable presentation presets; the renderer draws a two-layer
+  parallax starfield tinted per environment.
+- Enemies, aircraft, weapons and bosses are all data over their existing
+  frameworks: the `diver` enemy is one behavior module + config, the three extra
+  weapons and three extra aircraft are data, and Hydra/Leviathan reuse the
+  movement/attack registries with distinct phases and stats.
+- Audio is synthesized in `game/audio/AudioManager.ts` (effects + music) with UI
+  clicks from `app/settings/uiSound.ts`; all respect the persisted audio
+  settings and are replaceable without touching gameplay.
+
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
@@ -236,13 +253,13 @@ background colour and star tint.
 
 ## Current phase
 
-Phase 11 adds settings and UX: persisted controls (movement/shooting) and audio
-settings with a Web Audio manager, an ESC pause menu that stops the simulation,
-a profile page, menu navigation, and loading/error states. Phase 10 added the
-boss system, Phase 9 the aircraft shop, Phase 8 upgrades, Phase 7 backend
-persistence, Phase 6 scoring/rewards, Phase 5 the level system, Phase 4 the
-combat/enemy system, Phase 3 the core gameplay prototype, Phase 2 authentication
-and Phase 1 the project skeleton; a content/polish phase remains.
+Phase 12 completes the content and polish pass: the campaign now has 50 levels
+(hand-authored plus generated from a curve), five environments, six aircraft,
+four weapons, five enemy types and three bosses, plus synthesized audio,
+parallax depth, camera feedback and a performance review. Phases 1-11 built the
+skeleton, authentication, core gameplay, combat/enemies, levels, scoring,
+persistence, upgrades, aircraft, bosses and settings/UX. The game is feature
+complete; remaining work is optional content and balancing.
 
 
 ## Server authority and trust model

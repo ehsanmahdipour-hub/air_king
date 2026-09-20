@@ -23,6 +23,18 @@ export const ENVIRONMENTS = {
     backgroundColor: 0x1a0f14,
     starTint: 0xffb37a,
   },
+  aurora: {
+    id: 'aurora',
+    displayName: 'Aurora Belt',
+    backgroundColor: 0x06141a,
+    starTint: 0x7fffe0,
+  },
+  crimson: {
+    id: 'crimson',
+    displayName: 'Crimson Expanse',
+    backgroundColor: 0x1a0808,
+    starTint: 0xff8f6b,
+  },
 } satisfies Record<string, EnvironmentConfig>;
 
 export type EnvironmentId = keyof typeof ENVIRONMENTS;

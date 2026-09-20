@@ -33,4 +33,10 @@ describe('getNextLevelId', () => {
   it('returns null for the last level', () => {
     expect(getNextLevelId(LEVELS[LEVELS.length - 1].id)).toBeNull();
   });
+
+  it('unlocks the full 50-level chain once every earlier level is completed', () => {
+    const last = LEVELS[LEVELS.length - 1];
+    const completed = LEVELS.slice(0, LEVELS.length - 1).map((level) => level.id);
+    expect(isLevelUnlocked(last.id, completed)).toBe(true);
+  });
 });

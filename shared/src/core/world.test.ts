@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { BOMBER, FIGHTER, MINE, TURRET, getEnemy } from '../config/enemies';
+import { BOMBER, DIVER, FIGHTER, MINE, TURRET, getEnemy } from '../config/enemies';
 import { DEFAULT_ECONOMY_CONFIG } from '../config/economy';
 import { LEVELS, type LevelConfig } from '../config/levels';
 import { STARTER_AIRCRAFT } from '../config/aircraft';
@@ -540,5 +540,26 @@ describe('upgrades', () => {
     stepWorld(world, IDLE, 0.016);
 
     expect(world.player.health).toBe(world.player.maxHealth - (FIGHTER.contactDamage - 4));
+  });
+});
+
+describe('diver behavior', () => {
+  it('dives toward the player once within range', () => {
+    const world = createIsolationWorld();
+    world.player.position = { x: 600, y: 500 };
+    world.enemies.push(makeEnemy({ typeId: DIVER.id, position: { x: 500, y: 120 }, speed: 0 }));
+
+    const diver = world.enemies[0];
+    if (!diver) throw new Error('expected a diver');
+    const startX = diver.position.x;
+    const startY = diver.position.y;
+
+    stepWorld(world, IDLE, 0.05);
+    stepWorld(world, IDLE, 0.05);
+    stepWorld(world, IDLE, 0.05);
+
+    // diveSpeed 420 over ~0.15s moves it well past its zero base speed.
+    expect(diver.position.y).toBeGreaterThan(startY + 40);
+    expect(diver.position.x).toBeGreaterThan(startX);
   });
 });

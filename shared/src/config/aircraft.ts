@@ -1,4 +1,4 @@
-import { BASIC_CANNON } from './weapons';
+import { BASIC_CANNON, DOUBLE_SHOT, RAILGUN, SPREAD_SHOT } from './weapons';
 
 /**
  * Aircraft definitions. All stats are data so the simulation stays
@@ -97,7 +97,65 @@ export const FORTRESS: AircraftConfig = {
   availability: 'available',
 };
 
-export const AIRCRAFT: AircraftConfig[] = [STARTER_AIRCRAFT, INTERCEPTOR, FORTRESS];
+export const GUNSHIP: AircraftConfig = {
+  id: 'gunship',
+  displayName: 'Gunship',
+  description: 'Heavy firepower with a wide spread, but sluggish.',
+  maxHealth: 130,
+  armor: 3,
+  speed: 320,
+  firePower: 0.95,
+  fireRate: 0.8,
+  radius: 19,
+  invulnerabilitySeconds: 0.8,
+  weaponId: SPREAD_SHOT.id,
+  price: 1_500,
+  unlock: { kind: 'purchase' },
+  availability: 'available',
+};
+
+export const PHANTOM: AircraftConfig = {
+  id: 'phantom',
+  displayName: 'Phantom',
+  description: 'Extremely fast with twin cannons, but fragile.',
+  maxHealth: 70,
+  armor: 0,
+  speed: 470,
+  firePower: 1.1,
+  fireRate: 1.3,
+  radius: 13,
+  invulnerabilitySeconds: 0.65,
+  weaponId: DOUBLE_SHOT.id,
+  price: 2_200,
+  unlock: { kind: 'purchase' },
+  availability: 'available',
+};
+
+export const RAPTOR: AircraftConfig = {
+  id: 'raptor',
+  displayName: 'Raptor',
+  description: 'Balanced hull mounting a hard-hitting railgun.',
+  maxHealth: 105,
+  armor: 2,
+  speed: 400,
+  firePower: 1.2,
+  fireRate: 1,
+  radius: 16,
+  invulnerabilitySeconds: 0.8,
+  weaponId: RAILGUN.id,
+  price: 3_200,
+  unlock: { kind: 'purchase' },
+  availability: 'available',
+};
+
+export const AIRCRAFT: AircraftConfig[] = [
+  STARTER_AIRCRAFT,
+  INTERCEPTOR,
+  FORTRESS,
+  GUNSHIP,
+  PHANTOM,
+  RAPTOR,
+];
 
 export const DEFAULT_AIRCRAFT_ID = STARTER_AIRCRAFT.id;
 

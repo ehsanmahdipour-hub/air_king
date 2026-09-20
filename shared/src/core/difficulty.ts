@@ -23,6 +23,7 @@ export function applyDifficulty(
         projectile: scaleProjectile(config.projectile, modifiers.projectileSpeedMultiplier),
       };
     case 'mine':
+    case 'diver':
       return { ...config, speed };
   }
 }

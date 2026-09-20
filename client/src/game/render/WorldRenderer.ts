@@ -12,6 +12,7 @@ interface Star {
 }
 
 const STAR_COUNT = 140;
+const FAR_STAR_COUNT = 70;
 
 /**
  * Projects the pure simulation state onto Phaser game objects. It only reads
@@ -81,14 +82,29 @@ export class WorldRenderer {
 
   private createStars(): void {
     const { width, height } = this.level.arena;
+    const tint = this.level.environment.starTint;
 
+    // Far layer: large, dim, slow stars for depth.
+    for (let index = 0; index < FAR_STAR_COUNT; index += 1) {
+      const parallax = Phaser.Math.FloatBetween(0.08, 0.25);
+      const sprite = this.scene.add
+        .image(Phaser.Math.Between(0, width), Phaser.Math.Between(0, height), TEXTURES.star)
+        .setScale(parallax * 4)
+        .setAlpha(0.1 + parallax * 0.6)
+        .setTint(tint)
+        .setDepth(DEPTH.background);
+
+      this.stars.push({ sprite, baseY: sprite.y, parallax });
+    }
+
+    // Near layer: smaller, brighter, faster stars.
     for (let index = 0; index < STAR_COUNT; index += 1) {
       const parallax = Phaser.Math.FloatBetween(0.3, 1.2);
       const sprite = this.scene.add
         .image(Phaser.Math.Between(0, width), Phaser.Math.Between(0, height), TEXTURES.star)
         .setScale(parallax)
         .setAlpha(0.25 + (parallax / 1.2) * 0.6)
-        .setTint(this.level.environment.starTint)
+        .setTint(tint)
         .setDepth(DEPTH.background);
 
       this.stars.push({ sprite, baseY: sprite.y, parallax });

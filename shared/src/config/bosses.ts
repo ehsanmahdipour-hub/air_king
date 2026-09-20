@@ -72,7 +72,42 @@ export const DREADNOUGHT: BossConfig = {
   ],
 };
 
-export const BOSSES: BossConfig[] = [DREADNOUGHT];
+export const HYDRA: BossConfig = {
+  id: 'hydra',
+  displayName: 'Hydra',
+  maxHealth: 1_800,
+  radius: 40,
+  contactDamage: 45,
+  scoreValue: 4_500,
+  projectile: { damage: 14, speed: 300, radius: 7, lifeSeconds: 4, count: 1, spreadDegrees: 0 },
+  entryY: 140,
+  entrySpeed: 150,
+  phases: [
+    { untilHealthFraction: 0.7, movement: 'sweep', attacks: ['spread', 'aimed-burst'], attackInterval: 1.3, speed: 170 },
+    { untilHealthFraction: 0.35, movement: 'hover', attacks: ['radial', 'spread'], attackInterval: 1, speed: 120 },
+    { untilHealthFraction: 0, movement: 'track', attacks: ['radial', 'aimed-burst', 'spread'], attackInterval: 0.8, speed: 100 },
+  ],
+};
+
+export const LEVIATHAN: BossConfig = {
+  id: 'leviathan',
+  displayName: 'Leviathan',
+  maxHealth: 2_600,
+  radius: 54,
+  contactDamage: 55,
+  scoreValue: 6_000,
+  projectile: { damage: 16, speed: 320, radius: 8, lifeSeconds: 4.5, count: 1, spreadDegrees: 0 },
+  entryY: 160,
+  entrySpeed: 120,
+  phases: [
+    { untilHealthFraction: 0.75, movement: 'track', attacks: ['aimed-burst'], attackInterval: 1.2, speed: 110 },
+    { untilHealthFraction: 0.5, movement: 'sweep', attacks: ['spread', 'radial'], attackInterval: 1, speed: 150 },
+    { untilHealthFraction: 0.25, movement: 'hover', attacks: ['radial', 'aimed-burst'], attackInterval: 0.85, speed: 130 },
+    { untilHealthFraction: 0, movement: 'track', attacks: ['spread', 'radial', 'aimed-burst'], attackInterval: 0.7, speed: 120 },
+  ],
+};
+
+export const BOSSES: BossConfig[] = [DREADNOUGHT, HYDRA, LEVIATHAN];
 
 const BOSS_BY_ID: Record<string, BossConfig> = Object.fromEntries(
   BOSSES.map((boss) => [boss.id, boss]),
