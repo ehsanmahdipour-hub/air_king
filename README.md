@@ -164,6 +164,34 @@ pnpm --filter @game/client dev
 pnpm --filter @game/server dev
 ```
 
+## Run on Local Network
+
+To let other devices on the same network play, use the helper script:
+
+```bash
+./run_network.sh
+```
+
+It detects this machine's LAN IP, binds the client and server to all interfaces
+(`0.0.0.0`) and starts the app, printing the URLs to use:
+
+```text
+Game:    http://<LAN_IP>:5173
+Backend: http://<LAN_IP>:3001
+```
+
+Open `http://<LAN_IP>:5173` on the other device. The Vite dev server proxies
+`/api` to the backend, so authentication, API calls and gameplay all work over
+the LAN IP — no CORS or localhost changes are required.
+
+- Ports: client `5173`, backend `3001` (see `client/vite.config.ts` and
+  `server/.env`). The frontend binds to all interfaces via `host: true`.
+- If a device cannot connect, allow TCP ports `5173` and `3001` through the OS
+  firewall, and make sure router client-isolation is off. The script never
+  changes firewall settings.
+- The script exits with a clear message if `pnpm`, dependencies, `server/.env`
+  are missing, or no LAN IP can be detected.
+
 ## Environment variables
 
 `server/.env` (never commit the real file):
