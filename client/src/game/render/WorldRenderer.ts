@@ -13,6 +13,7 @@ interface Star {
 
 const STAR_COUNT = 140;
 const FAR_STAR_COUNT = 70;
+const NEBULA_COUNT = 7;
 
 /**
  * Projects the pure simulation state onto Phaser game objects. It only reads
@@ -25,7 +26,9 @@ export class WorldRenderer {
   private readonly enemyPool: SpritePool;
   private readonly projectilePool: SpritePool;
   private readonly stars: Star[] = [];
+  private readonly nebulae: Star[] = [];
   private bossSprite?: Phaser.GameObjects.Image;
+  private thruster?: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -35,11 +38,26 @@ export class WorldRenderer {
     this.projectilePool = new SpritePool(scene);
 
     scene.cameras.main.setBackgroundColor(level.environment.backgroundColor);
+    this.createNebulae();
     this.createStars();
 
     this.playerSprite = scene.add
       .image(level.playerStart.x, level.playerStart.y, TEXTURES.player)
       .setDepth(DEPTH.player);
+
+    this.thruster = scene.add
+      .particles(0, 0, TEXTURES.glow, {
+        lifespan: 260,
+        speedY: { min: 70, max: 150 },
+        speedX: { min: -20, max: 20 },
+        scale: { start: 0.4, end: 0 },
+        alpha: { start: 0.55, end: 0 },
+        tint: 0x66ccff,
+        blendMode: Phaser.BlendModes.ADD,
+        frequency: 40,
+        quantity: 1,
+      })
+      .setDepth(DEPTH.player - 1);
   }
 
   sync(world: World): void {
@@ -48,6 +66,14 @@ export class WorldRenderer {
     this.playerSprite
       .setPosition(world.player.position.x, world.player.position.y)
       .setAlpha(world.player.invulnerableFor > 0 ? 0.5 : 1);
+
+    if (this.thruster) {
+      this.thruster.setPosition(
+        world.player.position.x,
+        world.player.position.y + this.playerSprite.displayHeight * 0.32,
+      );
+      this.thruster.emitting = world.status === 'playing' || world.status === 'ready';
+    }
 
     this.syncEnemies(world);
     this.syncProjectiles(world);
@@ -76,8 +102,37 @@ export class WorldRenderer {
     }
     this.stars.length = 0;
 
+    for (const nebula of this.nebulae) {
+      nebula.sprite.destroy();
+    }
+    this.nebulae.length = 0;
+
+    this.thruster?.destroy();
     this.bossSprite?.destroy();
     this.playerSprite.destroy();
+  }
+
+  /** Soft, slow nebula clouds far behind the stars for depth. */
+  private createNebulae(): void {
+    const { width, height } = this.level.arena;
+    const tint = this.level.environment.starTint;
+
+    for (let index = 0; index < NEBULA_COUNT; index += 1) {
+      const parallax = Phaser.Math.FloatBetween(0.02, 0.07);
+      const sprite = this.scene.add
+        .image(
+          Phaser.Math.Between(-60, width + 60),
+          Phaser.Math.Between(-60, height + 60),
+          TEXTURES.nebula,
+        )
+        .setScale(Phaser.Math.FloatBetween(1.4, 3.2))
+        .setAlpha(Phaser.Math.FloatBetween(0.1, 0.2))
+        .setTint(tint)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(DEPTH.background - 1);
+
+      this.nebulae.push({ sprite, baseY: sprite.y, parallax });
+    }
   }
 
   private createStars(): void {
@@ -113,6 +168,14 @@ export class WorldRenderer {
 
   private scrollBackground(distance: number): void {
     const height = this.level.arena.height;
+
+    for (const nebula of this.nebulae) {
+      nebula.sprite.y = Phaser.Math.Wrap(
+        nebula.baseY + distance * nebula.parallax,
+        -220,
+        height + 220,
+      );
+    }
 
     for (const star of this.stars) {
       star.sprite.y = Phaser.Math.Wrap(star.baseY + distance * star.parallax, -8, height + 8);

@@ -83,6 +83,14 @@ export {
   type ShootingControl,
 } from './config/settings';
 export {
+  PLAYER_DIFFICULTIES,
+  PLAYER_DIFFICULTY_IDS,
+  DEFAULT_PLAYER_DIFFICULTY,
+  getPlayerDifficulty,
+  type PlayerDifficulty,
+  type PlayerDifficultyConfig,
+} from './config/difficulty';
+export {
   UPGRADES,
   DEFAULT_UPGRADE_LEVELS,
   getUpgrade,
@@ -133,7 +141,7 @@ export {
 // Pure game rules
 export { clamp, length, normalize, distance, circlesOverlap, angleBetween, randomRange } from './core/math';
 export { applyDamage, applyArmor, isDefeated } from './core/combat';
-export { resolveLoadout, type ResolvedLoadout, type LoadoutInput } from './core/loadout';
+export { resolveLoadout, upgradeEffectiveValue, type ResolvedLoadout, type LoadoutInput } from './core/loadout';
 export {
   runBossMovement,
   runBossAttack,
@@ -146,7 +154,7 @@ export { spawnBoss, updateBoss, defeatBoss } from './core/systems/boss';
 export { addScore, scoreForEnemyDestroyed, scoreForBossDamage, scoreForBossDefeat, scoreForSpecial, maxAchievableScore } from './core/scoring';
 export { createProjectiles, type ProjectileSpawn } from './core/weapons';
 export { formationSpawnPosition, type FormationParams } from './core/formations';
-export { applyDifficulty } from './core/difficulty';
+export { applyDifficulty, resolveDifficulty, type ResolvedDifficulty } from './core/difficulty';
 export { runEnemyBehavior, type EnemyBehaviorContext } from './core/behaviors';
 export {
   createDirectorState,

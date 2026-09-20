@@ -82,6 +82,7 @@ describe('settings routes', () => {
     const next = {
       movement: 'mouse',
       shooting: 'mouse',
+      difficulty: 'hard',
       musicEnabled: false,
       sfxEnabled: true,
       masterVolume: 0.4,
@@ -101,6 +102,7 @@ describe('settings routes', () => {
     const { token } = await register(app, 'bad@example.com');
 
     expect((await putSettings(app, token, { ...DEFAULT_SETTINGS, movement: 'joystick' })).statusCode).toBe(400);
+    expect((await putSettings(app, token, { ...DEFAULT_SETTINGS, difficulty: 'insane' })).statusCode).toBe(400);
     expect((await putSettings(app, token, { ...DEFAULT_SETTINGS, masterVolume: 2 })).statusCode).toBe(400);
     expect((await putSettings(app, token, { movement: 'keyboard' })).statusCode).toBe(400);
   });

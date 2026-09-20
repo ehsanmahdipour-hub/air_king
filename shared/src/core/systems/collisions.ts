@@ -158,7 +158,7 @@ function resolveBossContact(world: World): void {
     return;
   }
 
-  const damage = applyArmor(boss.config.contactDamage, player.armor);
+  const damage = applyArmor(boss.config.contactDamage * world.difficulty.enemyDamage, player.armor);
   player.health = applyDamage(player.health, damage);
   player.invulnerableFor = world.loadout.invulnerabilitySeconds;
   world.events.push({

@@ -1,4 +1,4 @@
-import type { GameSettings } from '@game/shared';
+import { PLAYER_DIFFICULTIES, PLAYER_DIFFICULTY_IDS, type GameSettings } from '@game/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SettingsPanelProps {
@@ -114,6 +114,24 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
               <option value="both">Both</option>
             </select>
           </label>
+        </fieldset>
+
+        <fieldset className="settings__group">
+          <legend>Difficulty</legend>
+          <div className="settings__radio-group">
+            {PLAYER_DIFFICULTY_IDS.map((id) => (
+              <label key={id} className="settings__radio">
+                <input
+                  type="radio"
+                  name="difficulty"
+                  checked={draft.difficulty === id}
+                  onChange={() => apply({ ...draft, difficulty: id })}
+                />
+                {PLAYER_DIFFICULTIES[id].displayName}
+              </label>
+            ))}
+          </div>
+          <p className="settings__hint">{PLAYER_DIFFICULTIES[draft.difficulty].description}</p>
         </fieldset>
 
         <fieldset className="settings__group">

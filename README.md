@@ -34,6 +34,21 @@ aircraft shop.
 
 See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the rationale behind each choice.
 
+## Difficulty
+
+Choose **Easy**, **Normal** or **Hard** in Settings (default: Normal). It is
+stored per account and applied through one centralized model — never by editing
+levels:
+
+| | Enemy health | Enemy damage | Enemy speed | Spawn rate | Fire rate | Player damage |
+| --- | --- | --- | --- | --- | --- | --- |
+| Easy | 0.85× | 0.55× | 0.85× | 0.8× | 0.7× | 1.3× |
+| Normal | 1× | 1× | 1× | 1× | 1× | 1× |
+| Hard | 1.15× | 1.4× | 1.15× | 1.3× | 1.35× | 0.85× |
+
+The level's own design tier still contributes, and both combine into a single
+`ResolvedDifficulty` that enemies, spawning, bosses and the player weapon read.
+
 ## Campaign & content
 
 - **50 levels.** Levels 1-5 are hand-authored; levels 6-50 are generated from a

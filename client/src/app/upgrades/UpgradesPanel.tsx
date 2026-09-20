@@ -1,14 +1,16 @@
 import {
   UPGRADES,
   upgradeCost,
+  upgradeEffectiveValue,
   upgradeNextValue,
-  upgradeValue,
   type PlayerProfileData,
   type UpgradeConfig,
   type UpgradeId,
   type UpgradeLevels,
 } from '@game/shared';
 import { useState } from 'react';
+
+import { UpgradeIcon } from './upgradeIcons';
 
 interface UpgradesPanelProps {
   profile: PlayerProfileData;
@@ -17,11 +19,25 @@ interface UpgradesPanelProps {
   onClose?: () => void;
 }
 
+const STAT_LABELS: Record<UpgradeConfig['stat'], string> = {
+  weaponDamage: 'Damage',
+  weaponFireRate: 'Shots/sec',
+  weaponProjectileCount: 'Projectiles',
+  weaponProjectileSpeed: 'Speed',
+  aircraftHealth: 'Health',
+  aircraftArmor: 'Armor',
+  aircraftSpeed: 'Speed',
+  aircraftFirePower: 'Damage multiplier',
+};
+
 function formatValue(upgrade: UpgradeConfig, value: number): string {
   if (upgrade.mode === 'multiply') {
     return `×${value.toFixed(2)}`;
   }
-  return `+${value}`;
+  if (upgrade.stat === 'weaponFireRate') {
+    return value.toFixed(1);
+  }
+  return `${value}`;
 }
 
 export function UpgradesPanel({ profile, levels, onPurchase, onClose }: UpgradesPanelProps) {
@@ -46,7 +62,7 @@ export function UpgradesPanel({ profile, levels, onPurchase, onClose }: Upgrades
 
   return (
     <section className="upgrades">
-      <div className="upgrades__header">
+      <header className="panel__header">
         <h2>Upgrades</h2>
         <span className="upgrades__coins">Coins: {profile.coins}</span>
         {onClose && (
@@ -54,7 +70,7 @@ export function UpgradesPanel({ profile, levels, onPurchase, onClose }: Upgrades
             Close
           </button>
         )}
-      </div>
+      </header>
 
       {message && (
         <p className={message.kind === 'ok' ? 'upgrades__ok' : 'upgrades__error'}>
@@ -62,7 +78,7 @@ export function UpgradesPanel({ profile, levels, onPurchase, onClose }: Upgrades
         </p>
       )}
 
-      <div className="upgrades__grid">
+      <div className="upgrades__columns">
         <UpgradeColumn
           title="Weapon"
           category="weapon"
@@ -98,39 +114,58 @@ function UpgradeColumn({ title, category, levels, coins, pending, onBuy }: Upgra
 
   return (
     <div className="upgrades__column">
-      <h3>{title}</h3>
-      {upgrades.map((upgrade) => {
-        const level = levels[upgrade.id];
-        const current = upgradeValue(upgrade, level);
-        const next = upgradeNextValue(upgrade, level);
-        const cost = upgradeCost(upgrade, level);
-        const maxed = cost === null;
-        const affordable = !maxed && coins >= cost;
+      <h3 className="upgrades__column-title">{title}</h3>
+      <div className="upgrades__cards">
+        {upgrades.map((upgrade) => {
+          const level = levels[upgrade.id];
+          const current = upgradeEffectiveValue(upgrade, level);
+          const nextLevel = upgradeNextValue(upgrade, level);
+          const next = nextLevel === null ? null : upgradeEffectiveValue(upgrade, level + 1);
+          const cost = upgradeCost(upgrade, level);
+          const maxed = cost === null;
+          const affordable = !maxed && coins >= cost;
 
-        return (
-          <div className="upgrade" key={upgrade.id}>
-            <div className="upgrade__info">
-              <span className="upgrade__name">{upgrade.displayName}</span>
-              <span className="upgrade__level">
-                Lv {level}/{upgrade.maxLevel}
-              </span>
-              <span className="upgrade__value">
-                {formatValue(upgrade, current)}
-                {next !== null ? ` → ${formatValue(upgrade, next)}` : ''}
-              </span>
-            </div>
-            <button
-              type="button"
-              className="app__button"
-              disabled={maxed || !affordable || pending === upgrade.id}
-              title={!maxed && !affordable ? 'Not enough coins' : undefined}
-              onClick={() => onBuy(upgrade.id)}
-            >
-              {maxed ? 'Max' : `Buy ${cost}`}
-            </button>
-          </div>
-        );
-      })}
+          return (
+            <article className="upgrade-card" key={upgrade.id}>
+              <div className="upgrade-card__head">
+                <span className="upgrade-card__icon">
+                  <UpgradeIcon id={upgrade.id} />
+                </span>
+                <span className="upgrade-card__name">{upgrade.displayName}</span>
+                <span className="upgrade-card__level">
+                  Lv {level}/{upgrade.maxLevel}
+                </span>
+              </div>
+
+              <p className="upgrade-card__desc">{upgrade.description}</p>
+
+              <div className="upgrade-card__values">
+                <span className="upgrade-card__stat">{STAT_LABELS[upgrade.stat]}</span>
+                <span className="upgrade-card__value">{formatValue(upgrade, current)}</span>
+                <span className="upgrade-card__arrow">→</span>
+                <span className="upgrade-card__value upgrade-card__value--next">
+                  {next === null ? 'MAX' : formatValue(upgrade, next)}
+                </span>
+              </div>
+
+              <div className="upgrade-card__footer">
+                <span className="upgrade-card__cost">
+                  {maxed ? 'Maximum level' : `${cost.toLocaleString()} coins`}
+                </span>
+                <button
+                  type="button"
+                  className="app__button upgrade-card__button"
+                  disabled={maxed || !affordable || pending === upgrade.id}
+                  title={!maxed && !affordable ? 'Not enough coins' : undefined}
+                  onClick={() => onBuy(upgrade.id)}
+                >
+                  {maxed ? 'Maxed' : 'Upgrade'}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }

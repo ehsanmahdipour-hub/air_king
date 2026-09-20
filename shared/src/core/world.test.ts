@@ -543,6 +543,54 @@ describe('upgrades', () => {
   });
 });
 
+describe('difficulty scaling', () => {
+  function oneFighterLevel(): LevelConfig {
+    return {
+      ...TEST_LEVEL,
+      startDelaySeconds: 0,
+      waves: [
+        {
+          startDelay: 0,
+          groups: [
+            { enemyTypeId: 'fighter', count: 1, formation: 'line', interval: 0, startDelay: 0 },
+          ],
+        },
+      ],
+      obstacleSections: [],
+      reward: { completionBonus: 0 },
+    };
+  }
+
+  function spawnOne(difficulty: 'easy' | 'normal' | 'hard'): number {
+    const world = createWorld(oneFighterLevel(), { difficulty });
+    startPlaying(world);
+    for (let step = 0; step < 20 && world.enemies.length === 0; step += 1) {
+      stepWorld(world, IDLE, 0.05);
+    }
+    return world.enemies[0]?.maxHealth ?? 0;
+  }
+
+  it('scales spawned enemy health by the selected difficulty', () => {
+    const easy = spawnOne('easy');
+    const normal = spawnOne('normal');
+    const hard = spawnOne('hard');
+
+    expect(easy).toBeLessThan(normal);
+    expect(hard).toBeGreaterThan(normal);
+  });
+
+  it('applies the player damage multiplier to the loadout', () => {
+    const easy = createWorld(ISOLATION_LEVEL, { difficulty: 'easy' });
+    const hard = createWorld(ISOLATION_LEVEL, { difficulty: 'hard' });
+
+    expect(easy.difficulty.playerDamage).toBeGreaterThan(1);
+    expect(hard.difficulty.playerDamage).toBeLessThan(1);
+    expect(easy.loadout.weapon.projectile.damage).toBeGreaterThan(
+      hard.loadout.weapon.projectile.damage,
+    );
+  });
+});
+
 describe('diver behavior', () => {
   it('dives toward the player once within range', () => {
     const world = createIsolationWorld();

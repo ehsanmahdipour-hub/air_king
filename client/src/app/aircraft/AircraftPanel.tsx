@@ -1,11 +1,12 @@
 import {
   AIRCRAFT,
   canPurchaseAircraft,
-  type AircraftConfig,
   type AircraftStateData,
   type PlayerProfileData,
 } from '@game/shared';
 import { useState } from 'react';
+
+import { AircraftArt } from './aircraftArt';
 
 interface AircraftPanelProps {
   profile: PlayerProfileData;
@@ -15,21 +16,25 @@ interface AircraftPanelProps {
   onClose?: () => void;
 }
 
+const MAX_STATS = {
+  health: Math.max(...AIRCRAFT.map((aircraft) => aircraft.maxHealth)),
+  armor: Math.max(...AIRCRAFT.map((aircraft) => aircraft.armor), 1),
+  speed: Math.max(...AIRCRAFT.map((aircraft) => aircraft.speed)),
+  firePower: Math.max(...AIRCRAFT.map((aircraft) => aircraft.firePower)),
+  fireRate: Math.max(...AIRCRAFT.map((aircraft) => aircraft.fireRate)),
+};
+
 function stateFor(states: AircraftStateData[], id: string): AircraftStateData {
   return states.find((state) => state.id === id) ?? { id, owned: false, equipped: false };
 }
 
-function statLine(aircraft: AircraftConfig): string {
-  return [
-    `HP ${aircraft.maxHealth}`,
-    `Armor ${aircraft.armor}`,
-    `Speed ${aircraft.speed}`,
-    `Power ×${aircraft.firePower.toFixed(2)}`,
-    `Fire rate ×${aircraft.fireRate.toFixed(2)}`,
-  ].join(' · ');
-}
-
-export function AircraftPanel({ profile, states, onPurchase, onEquip, onClose }: AircraftPanelProps) {
+export function AircraftPanel({
+  profile,
+  states,
+  onPurchase,
+  onEquip,
+  onClose,
+}: AircraftPanelProps) {
   const [pending, setPending] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
@@ -52,16 +57,16 @@ export function AircraftPanel({ profile, states, onPurchase, onEquip, onClose }:
   const ownedIds = states.filter((state) => state.owned).map((state) => state.id);
 
   return (
-    <section className="aircraft">
-      <div className="aircraft__header">
-        <h2>Aircraft</h2>
-        <span className="upgrades__coins">Coins: {profile.coins}</span>
+    <section className="hangar">
+      <header className="panel__header">
+        <h2>Hangar</h2>
+        <span className="hangar__coins">Coins: {profile.coins}</span>
         {onClose && (
           <button type="button" className="app__button" onClick={onClose}>
             Close
           </button>
         )}
-      </div>
+      </header>
 
       {message && (
         <p className={message.kind === 'ok' ? 'upgrades__ok' : 'upgrades__error'}>
@@ -69,7 +74,7 @@ export function AircraftPanel({ profile, states, onPurchase, onEquip, onClose }:
         </p>
       )}
 
-      <div className="aircraft__grid">
+      <div className="hangar__grid">
         {AIRCRAFT.map((aircraft) => {
           const state = stateFor(states, aircraft.id);
           const purchase = canPurchaseAircraft(aircraft, ownedIds, profile.coins);
@@ -78,31 +83,43 @@ export function AircraftPanel({ profile, states, onPurchase, onEquip, onClose }:
           const affordable = purchasable && profile.coins >= aircraft.price;
 
           return (
-            <div className="aircraft__card" key={aircraft.id}>
-              <div className="aircraft__title">
-                <span className="aircraft__name">{aircraft.displayName}</span>
-                {state.equipped && <span className="aircraft__badge">Equipped</span>}
-                {!state.equipped && state.owned && (
-                  <span className="aircraft__badge aircraft__badge--owned">Owned</span>
-                )}
+            <article className="aircraft-card" key={aircraft.id}>
+              <div className="aircraft-card__art">
+                <AircraftArt aircraftId={aircraft.id} />
+                <div className="aircraft-card__badges">
+                  {state.equipped && <span className="badge badge--equipped">Equipped</span>}
+                  {!state.equipped && state.owned && <span className="badge badge--owned">Owned</span>}
+                  {!state.owned && unavailable && <span className="badge badge--locked">Coming soon</span>}
+                  {!state.owned && !unavailable && <span className="badge badge--locked">Locked</span>}
+                </div>
               </div>
-              <p className="aircraft__description">{aircraft.description}</p>
-              <p className="aircraft__stats">{statLine(aircraft)}</p>
+
+              <h3 className="aircraft-card__name">{aircraft.displayName}</h3>
+              <p className="aircraft-card__description">{aircraft.description}</p>
+
+              <div className="stat-list">
+                <StatBar label="Health" value={aircraft.maxHealth} max={MAX_STATS.health} />
+                <StatBar label="Armor" value={aircraft.armor} max={MAX_STATS.armor} />
+                <StatBar label="Speed" value={aircraft.speed} max={MAX_STATS.speed} />
+                <StatBar label="Fire Power" value={aircraft.firePower} max={MAX_STATS.firePower} format={(v) => `${v.toFixed(2)}×`} />
+                <StatBar label="Fire Rate" value={aircraft.fireRate} max={MAX_STATS.fireRate} format={(v) => `${v.toFixed(2)}×`} />
+              </div>
+
               {aircraft.ability && (
-                <p className="aircraft__ability">
-                  Ability: {aircraft.ability.displayName} — {aircraft.ability.description}
+                <p className="aircraft-card__ability">
+                  <strong>{aircraft.ability.displayName}</strong> — {aircraft.ability.description}
                 </p>
               )}
 
-              <div className="aircraft__actions">
+              <div className="aircraft-card__actions">
                 {state.equipped ? (
-                  <button type="button" className="app__button" disabled>
+                  <button type="button" className="app__button aircraft-card__button" disabled>
                     Equipped
                   </button>
                 ) : state.owned ? (
                   <button
                     type="button"
-                    className="app__button"
+                    className="app__button aircraft-card__button aircraft-card__button--primary"
                     disabled={pending === aircraft.id}
                     onClick={() =>
                       void run(aircraft.id, () => onEquip(aircraft.id), 'Aircraft equipped.')
@@ -111,13 +128,13 @@ export function AircraftPanel({ profile, states, onPurchase, onEquip, onClose }:
                     Equip
                   </button>
                 ) : unavailable ? (
-                  <button type="button" className="app__button" disabled>
+                  <button type="button" className="app__button aircraft-card__button" disabled>
                     Coming soon
                   </button>
                 ) : purchasable ? (
                   <button
                     type="button"
-                    className="app__button"
+                    className="app__button aircraft-card__button aircraft-card__button--primary"
                     disabled={!affordable || pending === aircraft.id}
                     title={!affordable ? 'Not enough coins' : undefined}
                     onClick={() =>
@@ -128,22 +145,42 @@ export function AircraftPanel({ profile, states, onPurchase, onEquip, onClose }:
                       )
                     }
                   >
-                    Buy {aircraft.price}
+                    Buy · {aircraft.price.toLocaleString()}
                   </button>
                 ) : (
-                  <button type="button" className="app__button" disabled>
+                  <button type="button" className="app__button aircraft-card__button" disabled>
                     Unavailable
                   </button>
                 )}
               </div>
 
               {!purchase.ok && purchase.reason === 'insufficient_coins' && (
-                <p className="aircraft__hint">Not enough coins</p>
+                <p className="aircraft-card__hint">Not enough coins</p>
               )}
-            </div>
+            </article>
           );
         })}
       </div>
     </section>
+  );
+}
+
+interface StatBarProps {
+  label: string;
+  value: number;
+  max: number;
+  format?: (value: number) => string;
+}
+
+function StatBar({ label, value, max, format }: StatBarProps) {
+  const ratio = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  return (
+    <div className="stat-bar">
+      <span className="stat-bar__label">{label}</span>
+      <span className="stat-bar__track">
+        <span className="stat-bar__fill" style={{ width: `${ratio * 100}%` }} />
+      </span>
+      <span className="stat-bar__value">{format ? format(value) : value}</span>
+    </div>
   );
 }

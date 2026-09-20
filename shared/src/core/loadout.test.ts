@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { FORTRESS, GUNSHIP, INTERCEPTOR, PHANTOM, RAPTOR, STARTER_AIRCRAFT } from '../config/aircraft';
 import { DEFAULT_UPGRADE_LEVELS, type UpgradeLevels } from '../config/upgrades';
 import { BASIC_CANNON } from '../config/weapons';
-import { resolveLoadout } from './loadout';
+import { getUpgrade } from '../config/upgrades';
+import { resolveLoadout, upgradeEffectiveValue } from './loadout';
 
 function levels(overrides: Partial<UpgradeLevels> = {}): Partial<UpgradeLevels> {
   return { ...DEFAULT_UPGRADE_LEVELS, ...overrides };
@@ -105,5 +106,15 @@ describe('resolveLoadout', () => {
 
     expect(loadout.maxHealth).toBeGreaterThan(STARTER_AIRCRAFT.maxHealth);
     expect(loadout.weapon.projectile.count).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('upgradeEffectiveValue', () => {
+  it('reports effective gameplay values for upgrades', () => {
+    expect(upgradeEffectiveValue(getUpgrade('weapon-damage'), 1)).toBe(BASIC_CANNON.projectile.damage);
+    expect(upgradeEffectiveValue(getUpgrade('weapon-damage'), 3)).toBe(16);
+    expect(upgradeEffectiveValue(getUpgrade('aircraft-health'), 2)).toBe(125);
+    expect(upgradeEffectiveValue(getUpgrade('aircraft-fire-power'), 3)).toBe(1.3);
+    expect(upgradeEffectiveValue(getUpgrade('weapon-projectile-count'), 3)).toBe(3);
   });
 });

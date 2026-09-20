@@ -1,9 +1,10 @@
 import type { EconomyConfig } from '../config/economy';
 import type { BossConfig } from '../config/bosses';
 import type { EnemyConfig } from '../config/enemies';
-import type { DifficultyModifiers, LevelConfig } from '../config/levels';
+import type { LevelConfig } from '../config/levels';
 import type { ScoreConfig } from '../config/scoring';
 import type { GameEvent, LevelResult, Vec2 } from '../types';
+import type { ResolvedDifficulty } from './difficulty';
 import type { ResolvedLoadout } from './loadout';
 
 /**
@@ -121,8 +122,8 @@ export interface World {
   /** Set when the level is completed; drives the level-complete UI. */
   result: LevelResult | null;
   level: LevelConfig;
-  /** Difficulty scaling resolved from the level tier, applied at spawn. */
-  difficultyModifiers: DifficultyModifiers;
+  /** Difficulty resolved from the level tier and the player's setting. */
+  difficulty: ResolvedDifficulty;
   /** Central score rules (kill multiplier, boss/special values). */
   scoreConfig: ScoreConfig;
   /** Central economy rules used to convert score into coins. */

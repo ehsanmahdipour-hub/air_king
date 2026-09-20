@@ -25,6 +25,16 @@ describe('parseSettings', () => {
   it('falls back to defaults for invalid values', () => {
     expect(parseSettings({ masterVolume: 5 }).masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);
   });
+
+  it('defaults difficulty to normal and accepts easy/hard', () => {
+    expect(parseSettings({}).difficulty).toBe('normal');
+    expect(parseSettings({ difficulty: 'hard' }).difficulty).toBe('hard');
+    expect(parseSettings({ difficulty: 'easy' }).difficulty).toBe('easy');
+  });
+
+  it('falls back to normal difficulty for invalid values', () => {
+    expect(parseSettings({ difficulty: 'insane' }).difficulty).toBe('normal');
+  });
 });
 
 describe('movement options', () => {

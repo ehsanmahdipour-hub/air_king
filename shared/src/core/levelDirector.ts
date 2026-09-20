@@ -63,6 +63,11 @@ function shouldLoop(level: LevelConfig): boolean {
   return level.loopWaves === true && level.completionMode === 'reach-distance';
 }
 
+/** Scales a spawn delay by the difficulty spawn rate (higher rate = shorter). */
+function scaleSpawnDelay(world: World, seconds: number): number {
+  return seconds / world.difficulty.spawnRate;
+}
+
 function updateWaveSpawning(world: World, deltaSeconds: number): void {
   const { level, director } = world;
   if (director.waveIndex >= level.waves.length) {
@@ -87,7 +92,7 @@ function updateWaveSpawning(world: World, deltaSeconds: number): void {
   director.enemiesSpawned += 1;
 
   if (director.groupSpawnCount < group.count) {
-    director.spawnTimer = group.interval;
+    director.spawnTimer = scaleSpawnDelay(world, group.interval);
     return;
   }
 
@@ -95,7 +100,7 @@ function updateWaveSpawning(world: World, deltaSeconds: number): void {
   director.groupIndex += 1;
 
   if (director.groupIndex < wave.groups.length) {
-    director.spawnTimer = wave.groups[director.groupIndex].startDelay;
+    director.spawnTimer = scaleSpawnDelay(world, wave.groups[director.groupIndex].startDelay);
     return;
   }
 
@@ -116,13 +121,13 @@ function startNextWaveOrLoop(world: World): void {
   const { level, director } = world;
 
   if (director.waveIndex < level.waves.length) {
-    director.spawnTimer = level.waves[director.waveIndex].startDelay;
+    director.spawnTimer = scaleSpawnDelay(world, level.waves[director.waveIndex].startDelay);
     return;
   }
 
   if (shouldLoop(level)) {
     director.waveIndex = 0;
-    director.spawnTimer = level.waves[0].startDelay;
+    director.spawnTimer = scaleSpawnDelay(world, level.waves[0].startDelay);
     return;
   }
 
@@ -146,7 +151,7 @@ function updateObstacleSpawning(world: World, deltaSeconds: number): void {
   director.enemiesSpawned += 1;
 
   if (director.obstacleSpawnCount < section.count) {
-    director.obstacleTimer = section.interval;
+    director.obstacleTimer = scaleSpawnDelay(world, section.interval);
     return;
   }
 
@@ -154,13 +159,16 @@ function updateObstacleSpawning(world: World, deltaSeconds: number): void {
   director.obstacleIndex += 1;
 
   if (director.obstacleIndex < level.obstacleSections.length) {
-    director.obstacleTimer = level.obstacleSections[director.obstacleIndex].startDelay;
+    director.obstacleTimer = scaleSpawnDelay(
+      world,
+      level.obstacleSections[director.obstacleIndex].startDelay,
+    );
     return;
   }
 
   if (shouldLoop(level)) {
     director.obstacleIndex = 0;
-    director.obstacleTimer = level.obstacleSections[0].startDelay;
+    director.obstacleTimer = scaleSpawnDelay(world, level.obstacleSections[0].startDelay);
     return;
   }
 
@@ -203,7 +211,7 @@ function spawnEnemy(
   index: number,
   count: number,
 ): void {
-  const config = applyDifficulty(getEnemy(enemyTypeId), world.difficultyModifiers);
+  const config = applyDifficulty(getEnemy(enemyTypeId), world.difficulty);
   const position = formationSpawnPosition(formation, {
     index,
     count,

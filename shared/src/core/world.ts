@@ -1,10 +1,12 @@
 import { DEFAULT_ECONOMY_CONFIG, type EconomyConfig } from '../config/economy';
 import type { AircraftConfig } from '../config/aircraft';
-import { LEVELS, difficultyModifiers, type LevelConfig } from '../config/levels';
+import { DEFAULT_PLAYER_DIFFICULTY, type PlayerDifficulty } from '../config/difficulty';
+import { LEVELS, type LevelConfig } from '../config/levels';
 import type { UpgradeLevels } from '../config/upgrades';
 import { DEFAULT_SCORE_CONFIG, type ScoreConfig } from '../config/scoring';
 import { isDefeated } from './combat';
 import { MAX_STEP_SECONDS } from './constants';
+import { resolveDifficulty } from './difficulty';
 import type { InputState, World } from './entities';
 import { createDirectorState, isLevelCleared, updateSpawns } from './levelDirector';
 import { resolveLoadout } from './loadout';
@@ -40,10 +42,32 @@ export interface WorldOptions {
   aircraft?: AircraftConfig;
   /** Player upgrade levels applied to the loadout. */
   upgrades?: Partial<UpgradeLevels>;
+  /** Player-selected difficulty; defaults to Normal. */
+  difficulty?: PlayerDifficulty;
 }
 
 export function createWorld(level: LevelConfig = LEVELS[0], options: WorldOptions = {}): World {
-  const loadout = resolveLoadout({ aircraft: options.aircraft, upgrades: options.upgrades });
+  const difficulty = resolveDifficulty(
+    level.difficulty,
+    options.difficulty ?? DEFAULT_PLAYER_DIFFICULTY,
+  );
+  const baseLoadout = resolveLoadout({ aircraft: options.aircraft, upgrades: options.upgrades });
+  const loadout =
+    difficulty.playerDamage === 1
+      ? baseLoadout
+      : {
+          ...baseLoadout,
+          weapon: {
+            ...baseLoadout.weapon,
+            projectile: {
+              ...baseLoadout.weapon.projectile,
+              damage: Math.max(
+                1,
+                Math.round(baseLoadout.weapon.projectile.damage * difficulty.playerDamage),
+              ),
+            },
+          },
+        };
 
   return {
     status: 'ready',
@@ -52,7 +76,7 @@ export function createWorld(level: LevelConfig = LEVELS[0], options: WorldOption
     score: 0,
     result: null,
     level,
-    difficultyModifiers: difficultyModifiers(level.difficulty),
+    difficulty,
     scoreConfig: options.scoreConfig ?? DEFAULT_SCORE_CONFIG,
     economy: options.economy ?? DEFAULT_ECONOMY_CONFIG,
     loadout,

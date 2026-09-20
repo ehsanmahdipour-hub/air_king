@@ -410,3 +410,25 @@ adding a spatial hash.
 **Why.** Collision counts at 50-level densities remain small; a broad-phase would
 be premature. The regression harness measures steady-state object counts, which
 is the meaningful signal for leaks.
+
+## ADR-0044: Two-layer difficulty (level tier + player setting)
+
+**Decision.** Keep the level's design tier and add a player-selected
+Easy/Normal/Hard setting. `resolveDifficulty` combines both into a single
+`ResolvedDifficulty` stored on the world; enemies, spawning, bosses and the
+player loadout read from it.
+**Why.** The game felt too hard, but difficulty must not be re-authored per
+level. One resolved object keeps difficulty centralized and data-driven, lets a
+level's intended challenge and the player's preference coexist, and makes the
+values testable. Enemy health is only one of several levers (damage, speed, fire
+cadence, spawn rate, player damage).
+
+## ADR-0045: Procedural visuals and SVG UI art
+
+**Decision.** Generate all sprites procedurally in `textures.ts` (galaxy nebula
+layers, detailed aircraft/enemies/mines/turret/diver, bullets, glow) and use
+inline SVG for hangar aircraft art and upgrade icons. Keep counts small and reuse
+shared emitters.
+**Why.** This delivers a large visual upgrade with no licensed assets, keeps the
+style consistent, and stays performance-friendly. Art is isolated behind texture
+keys and SVG components, so real assets can replace it without touching gameplay.

@@ -10,6 +10,7 @@ import { spawnProjectile } from './projectiles';
 export function spawnBoss(world: World, bossId: string): void {
   const config: BossConfig = getBoss(bossId);
   const firstPhase = config.phases[0];
+  const maxHealth = Math.max(1, Math.round(config.maxHealth * world.difficulty.enemyHealth));
 
   world.boss = {
     id: world.nextId++,
@@ -17,8 +18,8 @@ export function spawnBoss(world: World, bossId: string): void {
     config,
     position: { x: world.level.arena.width / 2, y: -config.radius },
     radius: config.radius,
-    health: config.maxHealth,
-    maxHealth: config.maxHealth,
+    health: maxHealth,
+    maxHealth,
     phaseIndex: 0,
     attackIndex: 0,
     age: 0,
@@ -103,7 +104,11 @@ function fireBossProjectiles(
   spec: ProjectileSpec,
   angleRadians: number,
 ): void {
-  for (const spawn of createProjectiles(boss.position, spec, angleRadians)) {
+  const scaled: ProjectileSpec = {
+    ...spec,
+    damage: Math.max(0, spec.damage * world.difficulty.enemyDamage),
+  };
+  for (const spawn of createProjectiles(boss.position, scaled, angleRadians)) {
     spawnProjectile(world, 'enemy', spawn);
   }
   world.events.push({ type: 'bossShot', position: { ...boss.position } });

@@ -188,12 +188,17 @@ export class GameScene extends Phaser.Scene {
     this.hud.hideOverlay();
   }
 
-  /** Aircraft and upgrades are read from the bridge when a world is created. */
-  private loadoutOptions(): { aircraft?: AircraftConfig; upgrades?: Partial<UpgradeLevels> } {
+  /** Aircraft, upgrades and difficulty are read from the bridge per world. */
+  private loadoutOptions(): {
+    aircraft?: AircraftConfig;
+    upgrades?: Partial<UpgradeLevels>;
+    difficulty?: GameSettings['difficulty'];
+  } {
     const aircraftId = this.bridge?.aircraftId;
     return {
       aircraft: aircraftId ? getAircraft(aircraftId) : undefined,
       upgrades: this.bridge?.upgradeLevels,
+      difficulty: this.currentSettings().difficulty,
     };
   }
 

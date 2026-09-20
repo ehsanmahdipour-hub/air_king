@@ -236,6 +236,22 @@ testable and replaceable.
   clicks from `app/settings/uiSound.ts`; all respect the persisted audio
   settings and are replaceable without touching gameplay.
 
+### Difficulty, visuals and assets
+
+- Difficulty has two layers: a level's design tier (`config/levels/difficulty.ts`)
+  and the player's chosen setting (`config/difficulty.ts`). `resolveDifficulty`
+  combines them into one `ResolvedDifficulty` on the world; `applyDifficulty`
+  scales enemy health/damage/speed/fire cadence/projectiles, spawning scales
+  intervals, bosses scale health/damage, and the loadout applies the player
+  damage multiplier. Nothing edits individual levels.
+- All art is procedural in `client/src/game/textures.ts` (aircraft, enemies,
+  mines, turret, diver, boss, bullets, sparks, glow, stars, nebula). The renderer
+  layers a slow nebula field, far stars and near stars for parallax depth, plus a
+  subtle player thruster; effects use a few shared pooled emitters.
+- The hangar and upgrades UI use inline SVG art/icons (`aircraftArt.tsx`,
+  `upgradeIcons.tsx`) so visuals are modular and replaceable, and upgrade values
+  are shown as real gameplay numbers via `upgradeEffectiveValue`.
+
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.

@@ -4,9 +4,11 @@ import {
   type AircraftConfig,
 } from '../config/aircraft';
 import {
+  DEFAULT_UPGRADE_LEVELS,
   UPGRADES,
   clampUpgradeLevel,
   upgradeValue,
+  type UpgradeConfig,
   type UpgradeLevels,
 } from '../config/upgrades';
 import { getWeapon, type ProjectileSpec } from '../config/weapons';
@@ -78,4 +80,33 @@ export function resolveLoadout(input: LoadoutInput = {}): ResolvedLoadout {
       },
     },
   };
+}
+
+/**
+ * Effective stat value for an upgrade at a level, using the starter loadout as
+ * the reference. Used by the UI to show "current value → next value" as real
+ * gameplay numbers rather than raw modifiers.
+ */
+export function upgradeEffectiveValue(upgrade: UpgradeConfig, level: number): number {
+  const levels = { ...DEFAULT_UPGRADE_LEVELS, [upgrade.id]: level };
+  const loadout = resolveLoadout({ upgrades: levels });
+
+  switch (upgrade.stat) {
+    case 'weaponDamage':
+      return loadout.weapon.projectile.damage;
+    case 'weaponFireRate':
+      return Math.round(loadout.weapon.fireRate * 10) / 10;
+    case 'weaponProjectileCount':
+      return loadout.weapon.projectile.count;
+    case 'weaponProjectileSpeed':
+      return Math.round(loadout.weapon.projectile.speed);
+    case 'aircraftHealth':
+      return loadout.maxHealth;
+    case 'aircraftArmor':
+      return loadout.armor;
+    case 'aircraftSpeed':
+      return Math.round(loadout.speed);
+    case 'aircraftFirePower':
+      return upgradeValue(upgrade, level);
+  }
 }

@@ -633,3 +633,307 @@ button:disabled {
   flex: 1;
   padding: 8px;
 }
+
+/* Galaxy / global polish */
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #101a33 0%, #05070f 60%),
+    #05070f;
+}
+
+.panel-overlay {
+  background:
+    radial-gradient(900px 500px at 50% 0%, #0d1730 0%, #05070f 70%),
+    #05070f;
+}
+
+.app__button {
+  transition: border-color 120ms ease, background 120ms ease, transform 60ms ease;
+}
+
+.app__button:hover:not(:disabled) {
+  border-color: #3a5080;
+  background: #14284c;
+}
+
+.app__button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Settings difficulty */
+
+.settings__radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings__radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #dbe7ff;
+}
+
+.settings__hint {
+  margin: 0;
+  color: #5f6f92;
+  font-size: 11px;
+}
+
+/* Hangar / aircraft cards */
+
+.hangar__coins,
+.upgrades__coins {
+  color: #ffe066;
+  font-size: 12px;
+}
+
+.hangar__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+  padding: 12px 16px 20px;
+}
+
+.aircraft-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid #16203a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0c1428 0%, #080d18 100%);
+}
+
+.aircraft-card__art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  border-radius: 8px;
+  background: radial-gradient(120px 90px at 50% 70%, #12203c 0%, #070c16 70%);
+}
+
+.aircraft-card__badges {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.badge {
+  padding: 2px 8px;
+  border: 1px solid #3a5080;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #7fd1ff;
+  background: rgba(10, 16, 32, 0.8);
+}
+
+.badge--equipped {
+  border-color: #235c40;
+  color: #6ee7a8;
+}
+
+.badge--owned {
+  border-color: #3a5080;
+  color: #7fd1ff;
+}
+
+.badge--locked {
+  border-color: #5c2323;
+  color: #ff8b8b;
+}
+
+.aircraft-card__name {
+  margin: 12px 0 4px;
+  color: #dbe7ff;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+.aircraft-card__description {
+  margin: 0 0 10px;
+  color: #9fb0d4;
+  font-size: 12px;
+  min-height: 32px;
+}
+
+.stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.stat-bar {
+  display: grid;
+  grid-template-columns: 74px 1fr 46px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.stat-bar__label {
+  color: #9fb0d4;
+}
+
+.stat-bar__track {
+  height: 8px;
+  border-radius: 999px;
+  background: #131c30;
+  overflow: hidden;
+}
+
+.stat-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f6fb0, #7fd1ff);
+}
+
+.stat-bar__value {
+  color: #dbe7ff;
+  text-align: right;
+}
+
+.aircraft-card__ability {
+  margin: 0 0 10px;
+  color: #c9a6ff;
+  font-size: 11px;
+}
+
+.aircraft-card__actions {
+  margin-top: auto;
+}
+
+.aircraft-card__button {
+  width: 100%;
+  padding: 9px;
+  font-size: 13px;
+}
+
+.aircraft-card__button--primary {
+  border-color: #3a5080;
+  background: #15305c;
+}
+
+.aircraft-card__hint {
+  margin: 8px 0 0;
+  color: #ff8b8b;
+  font-size: 11px;
+}
+
+/* Upgrade cards */
+
+.upgrades__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 12px 16px 20px;
+}
+
+.upgrades__column-title {
+  margin: 0 0 8px;
+  color: #7fd1ff;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.upgrades__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upgrade-card {
+  padding: 12px;
+  border: 1px solid #16203a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0c1428 0%, #080d18 100%);
+}
+
+.upgrade-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upgrade-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #253354;
+  border-radius: 8px;
+  color: #7fd1ff;
+  background: #0f1a30;
+}
+
+.upgrade-card__name {
+  flex: 1;
+  color: #dbe7ff;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.upgrade-card__level {
+  color: #5f6f92;
+  font-size: 11px;
+}
+
+.upgrade-card__desc {
+  margin: 8px 0;
+  color: #9fb0d4;
+  font-size: 11px;
+}
+
+.upgrade-card__values {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.upgrade-card__stat {
+  color: #5f6f92;
+  font-size: 11px;
+}
+
+.upgrade-card__value {
+  color: #dbe7ff;
+}
+
+.upgrade-card__value--next {
+  color: #6ee7a8;
+}
+
+.upgrade-card__arrow {
+  color: #5f6f92;
+}
+
+.upgrade-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.upgrade-card__cost {
+  color: #ffe066;
+  font-size: 12px;
+}
+
+.upgrade-card__button {
+  min-width: 96px;
+  padding: 7px 12px;
+}

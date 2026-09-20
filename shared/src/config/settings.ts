@@ -1,13 +1,17 @@
 import { z } from 'zod';
 
+import { PLAYER_DIFFICULTY_IDS } from './difficulty';
+
 /** Player-configurable settings. Kept intentionally small. */
 
 export const movementControlSchema = z.enum(['wasd', 'arrows', 'mouse']);
 export const shootingControlSchema = z.enum(['space', 'mouse', 'both']);
+export const difficultySchema = z.enum(PLAYER_DIFFICULTY_IDS);
 
 export const gameSettingsSchema = z.object({
   movement: movementControlSchema,
   shooting: shootingControlSchema,
+  difficulty: difficultySchema,
   musicEnabled: z.boolean(),
   sfxEnabled: z.boolean(),
   masterVolume: z.number().min(0).max(1),
@@ -22,6 +26,7 @@ export type ShootingControl = z.infer<typeof shootingControlSchema>;
 export const DEFAULT_SETTINGS: GameSettings = {
   movement: 'wasd',
   shooting: 'both',
+  difficulty: 'normal',
   musicEnabled: true,
   sfxEnabled: true,
   masterVolume: 0.8,
