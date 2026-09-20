@@ -7,7 +7,7 @@ import {
   type UpgradeId,
   type UpgradeLevels,
 } from '@game/shared';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AuthForm } from './auth/AuthForm';
 import { useAuth } from './auth/AuthContext';
@@ -22,7 +22,7 @@ import { SettingsPanel } from './settings/SettingsPanel';
 import { playUiClick, setUiAudioSettings } from './settings/uiSound';
 import { getUpgrades, purchaseUpgrade } from './upgrades/upgradesApi';
 import { UpgradesPanel } from './upgrades/UpgradesPanel';
-import type { GameProgressBridge } from '../game/progressBridge';
+import type { GameProgressBridge, LevelCompleteSummary } from '../game/progressBridge';
 
 type SessionCheck = 'idle' | 'checking' | 'ok' | 'error';
 type LoadState = 'loading' | 'ready' | 'error';
@@ -33,7 +33,7 @@ export function App() {
   return (
     <div className="app">
       <header className="app__header">
-        <h1>Air Combat</h1>
+        <h1>AIR KINGS</h1>
         <SessionControls />
       </header>
 
@@ -91,13 +91,20 @@ function AccountView() {
   const [upgradeLevels, setUpgradeLevels] = useState<UpgradeLevels | null>(null);
   const [aircraft, setAircraft] = useState<AircraftStateData[] | null>(null);
   const [settings, setSettings] = useState<GameSettings | null>(null);
+  const [summary, setSummary] = useState<LevelCompleteSummary | null>(null);
+
+  const panelRef = useRef<Panel>('none');
+  panelRef.current = panel;
 
   const bridge = useMemo<GameProgressBridge>(
     () => ({
       bestScores: new Map<string, number>(),
       completedLevelIds: new Set<string>(),
       settings: DEFAULT_SETTINGS,
+      isUiOpen: () => panelRef.current !== 'none',
+      onShowLevelComplete: (next) => setSummary(next),
       onExitToMenu: () => {
+        setSummary(null);
         setScreen('menu');
         setPanel('none');
       },
@@ -316,6 +323,7 @@ function AccountView() {
               type="button"
               className="menu__item"
               onClick={() => {
+                setSummary(null);
                 setPanel('none');
                 setScreen('playing');
               }}
@@ -340,6 +348,91 @@ function AccountView() {
         {loadState === 'ready' && panel !== 'none' && (
           <div className="panel-overlay">{renderPanel()}</div>
         )}
+
+        {loadState === 'ready' && screen === 'playing' && summary && (
+          <LevelCompleteOverlay
+            summary={summary}
+            onNext={() => {
+              bridge.commands?.nextLevel();
+              setSummary(null);
+            }}
+            onReplay={() => {
+              bridge.commands?.replayLevel();
+              setSummary(null);
+            }}
+            onMenu={() => {
+              setSummary(null);
+              setScreen('menu');
+              setPanel('none');
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface LevelCompleteOverlayProps {
+  summary: LevelCompleteSummary;
+  onNext: () => void;
+  onReplay: () => void;
+  onMenu: () => void;
+}
+
+function LevelCompleteOverlay({ summary, onNext, onReplay, onMenu }: LevelCompleteOverlayProps) {
+  return (
+    <div className="panel-overlay level-complete">
+      <div className="level-complete__panel">
+        <h2>LEVEL COMPLETE</h2>
+        <p className="level-complete__level">
+          Level {summary.levelNumber} — {summary.levelName}
+        </p>
+
+        <dl className="level-complete__stats">
+          <div>
+            <dt>Score</dt>
+            <dd>{summary.score}</dd>
+          </div>
+          <div>
+            <dt>Completion bonus</dt>
+            <dd>{summary.completionBonus}</dd>
+          </div>
+          <div>
+            <dt>Total score</dt>
+            <dd>{summary.totalScore}</dd>
+          </div>
+          <div>
+            <dt>Coins earned</dt>
+            <dd>{summary.coins}</dd>
+          </div>
+          <div>
+            <dt>Best score</dt>
+            <dd>{summary.bestScore}</dd>
+          </div>
+        </dl>
+
+        {summary.isFinal ? (
+          <p className="level-complete__final">Campaign complete! You cleared every level.</p>
+        ) : summary.nextLevel ? (
+          <button
+            type="button"
+            className="app__button level-complete__primary"
+            onClick={onNext}
+          >
+            Next Level — {summary.nextLevel.name}
+          </button>
+        ) : (
+          <p className="level-complete__final">The next level is still locked.</p>
+        )}
+
+        <div className="level-complete__actions">
+          <button type="button" className="app__button" onClick={onReplay}>
+            Replay
+          </button>
+          <button type="button" className="app__button" onClick={onMenu}>
+            Main Menu
+          </button>
+        </div>
       </div>
     </div>
   );

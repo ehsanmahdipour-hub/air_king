@@ -40,6 +40,8 @@ export function AuthForm() {
 
   return (
     <section className="auth">
+      <h1 className="auth__brand">AIR KINGS</h1>
+
       <div className="auth__tabs">
         <button
           type="button"

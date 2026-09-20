@@ -2,6 +2,7 @@ import {
   DEFAULT_SETTINGS,
   createWorld,
   getAircraft,
+  getLevelIndex,
   getNextLevelId,
   isLevelUnlocked,
   stepWorld,
@@ -38,6 +39,7 @@ export class GameScene extends Phaser.Scene {
   private bestScores = new Map<string, number>();
   private completionSynced = false;
   private serverReward: CompleteLevelResponse['result'] | null = null;
+  private serverCurrentLevelId: string | null = null;
 
   private controls!: PlayerInput;
   private worldRenderer!: WorldRenderer;
@@ -87,6 +89,13 @@ export class GameScene extends Phaser.Scene {
     const startIndex = startId ? CAMPAIGN.findIndex((level) => level.id === startId) : 0;
     this.loadLevel(startIndex >= 0 ? startIndex : 0);
 
+    if (this.bridge) {
+      this.bridge.commands = {
+        nextLevel: () => this.goToNextLevel(),
+        replayLevel: () => this.restart(),
+      };
+    }
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.worldRenderer?.destroy();
       this.effects.destroy();
@@ -111,6 +120,17 @@ export class GameScene extends Phaser.Scene {
       this.worldRenderer.sync(this.world);
       this.hud.update(this.world);
       this.hud.showPause(PAUSE_ITEMS, this.pauseIndex);
+      return;
+    }
+
+    // Freeze the simulation while a shell overlay (settings, shop, profile) is
+    // open so gameplay and keyboard input cannot leak behind it.
+    if (
+      (this.world.status === 'ready' || this.world.status === 'playing') &&
+      this.bridge?.isUiOpen?.()
+    ) {
+      this.worldRenderer.sync(this.world);
+      this.hud.update(this.world);
       return;
     }
 
@@ -149,6 +169,7 @@ export class GameScene extends Phaser.Scene {
     this.world = createWorld(this.level, this.loadoutOptions());
     this.completionSynced = false;
     this.serverReward = null;
+    this.serverCurrentLevelId = null;
     this.paused = false;
 
     this.worldRenderer?.destroy();
@@ -161,6 +182,7 @@ export class GameScene extends Phaser.Scene {
     this.world = createWorld(this.level, this.loadoutOptions());
     this.completionSynced = false;
     this.serverReward = null;
+    this.serverCurrentLevelId = null;
     this.paused = false;
     this.worldRenderer.reset();
     this.hud.hideOverlay();
@@ -236,7 +258,12 @@ export class GameScene extends Phaser.Scene {
           this.completionSynced = true;
           void this.syncCompletion();
         }
-        this.renderSummary();
+        if (this.bridge?.onShowLevelComplete) {
+          // The React shell renders the summary with real buttons.
+          this.hud.hideOverlay();
+        } else {
+          this.renderSummary();
+        }
         break;
       }
       case 'gameover':
@@ -280,20 +307,64 @@ export class GameScene extends Phaser.Scene {
 
     try {
       const response = await bridge.onLevelComplete(result.levelId, result.score);
-      if (!response) {
-        return;
-      }
-      this.serverReward = response.result;
-      this.bestScores.set(
-        result.levelId,
-        Math.max(this.bestScores.get(result.levelId) ?? 0, response.result.totalScore),
-      );
-      if (this.world.status === 'levelComplete') {
-        this.renderSummary();
+      if (response) {
+        this.serverReward = response.result;
+        this.serverCurrentLevelId = response.profile.currentLevelId;
+        this.bestScores.set(
+          result.levelId,
+          Math.max(this.bestScores.get(result.levelId) ?? 0, response.result.totalScore),
+        );
       }
     } catch {
       // Keep the locally computed summary if the server could not be reached.
     }
+
+    if (this.world.status === 'levelComplete') {
+      this.emitSummary();
+    }
+  }
+
+  /** Hands the level-complete summary to the shell (server-validated unlock). */
+  private emitSummary(): void {
+    const result = this.world.result;
+    const emit = this.bridge?.onShowLevelComplete;
+    if (!result || !emit) {
+      return;
+    }
+
+    const reward = this.serverReward ?? {
+      score: result.score,
+      completionBonus: result.completionBonus,
+      totalScore: result.totalScore,
+      coins: result.coins,
+    };
+    const bestScore = Math.max(this.bestScores.get(result.levelId) ?? 0, reward.totalScore);
+
+    const nextId = getNextLevelId(result.levelId);
+    const nextConfig = nextId ? CAMPAIGN.find((candidate) => candidate.id === nextId) : undefined;
+    const unlockedByServer =
+      nextId && this.serverCurrentLevelId
+        ? getLevelIndex(nextId) <= getLevelIndex(this.serverCurrentLevelId)
+        : false;
+    const unlocked = nextId
+      ? unlockedByServer || isLevelUnlocked(nextId, [...this.completedLevelIds])
+      : false;
+    const nextLevel =
+      nextId && nextConfig && unlocked
+        ? { id: nextConfig.id, name: nextConfig.name, levelNumber: nextConfig.levelNumber }
+        : null;
+
+    emit({
+      levelNumber: result.levelNumber,
+      levelName: result.levelName,
+      score: reward.score,
+      completionBonus: reward.completionBonus,
+      totalScore: reward.totalScore,
+      coins: reward.coins,
+      bestScore,
+      nextLevel,
+      isFinal: nextId === null,
+    });
   }
 
   /** Maps simulation events to effects, audio and camera feedback. */

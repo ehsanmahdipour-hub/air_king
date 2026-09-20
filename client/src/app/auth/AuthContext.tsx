@@ -10,7 +10,6 @@ import {
 
 import * as authApi from './authApi';
 import type { AuthUser, LoginInput, RegisterInput } from './authApi';
-
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 interface AuthContextValue {
@@ -49,6 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // If a request can no longer refresh the session, return to the login screen.
+  useEffect(() => {
+    return authApi.onSessionExpired(() => {
+      setUser(null);
+      setStatus('unauthenticated');
+    });
   }, []);
 
   const login = useCallback(async (input: LoginInput) => {

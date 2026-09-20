@@ -1,5 +1,5 @@
 import type { GameSettings } from '@game/shared';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SettingsPanelProps {
   settings: GameSettings;
@@ -7,19 +7,67 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
+const VOLUME_DEBOUNCE_MS = 300;
+
 export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProps) {
+  const [draft, setDraft] = useState<GameSettings>(settings);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  async function update(patch: Partial<GameSettings>): Promise<void> {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<GameSettings | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setDraft(settings);
+  }, [settings]);
+
+  const persist = useCallback(async (next: GameSettings) => {
     setSaving(true);
     setError(null);
     try {
-      await onChange({ ...settings, ...patch });
+      await onChangeRef.current(next);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not save settings.');
     } finally {
       setSaving(false);
+    }
+  }, []);
+
+  // Flush a pending debounced change when the panel closes.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      if (pendingRef.current) {
+        void onChangeRef.current(pendingRef.current).catch(() => undefined);
+        pendingRef.current = null;
+      }
+    };
+  }, []);
+
+  function apply(next: GameSettings, debounce = false): void {
+    setDraft(next);
+    pendingRef.current = next;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (debounce) {
+      timerRef.current = setTimeout(() => {
+        const pending = pendingRef.current;
+        pendingRef.current = null;
+        if (pending) {
+          void persist(pending);
+        }
+      }, VOLUME_DEBOUNCE_MS);
+    } else {
+      pendingRef.current = null;
+      void persist(next);
     }
   }
 
@@ -42,12 +90,13 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
           <label className="settings__field">
             Movement
             <select
-              value={settings.movement}
+              value={draft.movement}
               onChange={(event) =>
-                void update({ movement: event.target.value as GameSettings['movement'] })
+                apply({ ...draft, movement: event.target.value as GameSettings['movement'] })
               }
             >
-              <option value="keyboard">Keyboard (WASD)</option>
+              <option value="wasd">WASD</option>
+              <option value="arrows">Arrow Keys</option>
               <option value="mouse">Mouse</option>
             </select>
           </label>
@@ -55,9 +104,9 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
           <label className="settings__field">
             Shooting
             <select
-              value={settings.shooting}
+              value={draft.shooting}
               onChange={(event) =>
-                void update({ shooting: event.target.value as GameSettings['shooting'] })
+                apply({ ...draft, shooting: event.target.value as GameSettings['shooting'] })
               }
             >
               <option value="space">Space</option>
@@ -73,8 +122,8 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
           <label className="settings__check">
             <input
               type="checkbox"
-              checked={settings.musicEnabled}
-              onChange={(event) => void update({ musicEnabled: event.target.checked })}
+              checked={draft.musicEnabled}
+              onChange={(event) => apply({ ...draft, musicEnabled: event.target.checked })}
             />
             Music
           </label>
@@ -82,26 +131,26 @@ export function SettingsPanel({ settings, onChange, onClose }: SettingsPanelProp
           <label className="settings__check">
             <input
               type="checkbox"
-              checked={settings.sfxEnabled}
-              onChange={(event) => void update({ sfxEnabled: event.target.checked })}
+              checked={draft.sfxEnabled}
+              onChange={(event) => apply({ ...draft, sfxEnabled: event.target.checked })}
             />
             Sound effects
           </label>
 
           <VolumeSlider
             label="Master volume"
-            value={settings.masterVolume}
-            onChange={(value) => void update({ masterVolume: value })}
+            value={draft.masterVolume}
+            onChange={(value) => apply({ ...draft, masterVolume: value }, true)}
           />
           <VolumeSlider
             label="Music volume"
-            value={settings.musicVolume}
-            onChange={(value) => void update({ musicVolume: value })}
+            value={draft.musicVolume}
+            onChange={(value) => apply({ ...draft, musicVolume: value }, true)}
           />
           <VolumeSlider
             label="SFX volume"
-            value={settings.sfxVolume}
-            onChange={(value) => void update({ sfxVolume: value })}
+            value={draft.sfxVolume}
+            onChange={(value) => apply({ ...draft, sfxVolume: value }, true)}
           />
         </fieldset>
       </div>

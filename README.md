@@ -1,4 +1,4 @@
-# Air Combat
+# AIR KINGS
 
 A desktop-first, single-player, browser-based arcade air combat game built as a
 modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
