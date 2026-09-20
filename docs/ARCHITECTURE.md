@@ -196,6 +196,29 @@ testable and replaceable.
   boss events to effects. The server's `maxAchievableScore` includes boss damage
   and defeat score so submitted scores are validated.
 
+### Settings, audio, pause and UX
+
+- Settings are declared in `config/settings.ts` (movement, shooting, music/sfx
+  toggles, master/music/sfx volumes) with a Zod schema, defaults and a
+  partial-merge parser. They are stored on `PlayerProfile.settingsJson` and
+  served by `GET`/`PUT /api/v1/settings`; the server validates on write and
+  merges defaults on read.
+- The client shell owns settings networking and injects them into the game via
+  the progress bridge. `PlayerInput.read(settings)` honours the movement mode
+  (keyboard or mouse) and shooting mode (space, mouse or both), so control
+  switching is data-driven.
+- `game/audio/AudioManager.ts` is a small Web Audio synthesizer: oscillator blips
+  for shoot/hit/explosion/boss/jingle effects and a looping arpeggio for music,
+  with gains driven by the persisted audio settings. It no-ops if Web Audio is
+  unavailable.
+- Pause is handled in `GameScene`: ESC toggles a pause state that stops
+  `stepWorld`, and the HUD renders a keyboard-navigable menu (Resume, Settings,
+  Restart Level, Exit to Menu). Settings opens the React panel via a bridge
+  callback; Exit to Menu returns the shell to the menu.
+- The React shell provides menu navigation, profile, settings, aircraft and
+  upgrade panels, plus loading and error states with retry. Panels overlay the
+  game so opening settings from the pause menu does not destroy the run.
+
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.
@@ -213,14 +236,13 @@ background colour and star tint.
 
 ## Current phase
 
-Phase 10 adds a reusable boss framework: data-driven bosses with phases,
-separate movement and attack pattern registries, a boss state/health/damage/
-death/reward system, a boss health bar and level integration (selected levels
-reference a boss, and the level only completes once it is defeated). Phase 9
-added the aircraft shop, Phase 8 upgrades, Phase 7 backend persistence, Phase 6
-scoring/rewards, Phase 5 the level system, Phase 4 the combat/enemy system,
-Phase 3 the core gameplay prototype, Phase 2 authentication and Phase 1 the
-project skeleton; settings/UX and content expansion follow.
+Phase 11 adds settings and UX: persisted controls (movement/shooting) and audio
+settings with a Web Audio manager, an ESC pause menu that stops the simulation,
+a profile page, menu navigation, and loading/error states. Phase 10 added the
+boss system, Phase 9 the aircraft shop, Phase 8 upgrades, Phase 7 backend
+persistence, Phase 6 scoring/rewards, Phase 5 the level system, Phase 4 the
+combat/enemy system, Phase 3 the core gameplay prototype, Phase 2 authentication
+and Phase 1 the project skeleton; a content/polish phase remains.
 
 
 ## Server authority and trust model

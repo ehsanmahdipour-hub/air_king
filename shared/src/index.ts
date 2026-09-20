@@ -64,23 +64,17 @@ export {
   type BossMovementId,
   type BossAttackId,
 } from './config/bosses';
+export { STARTER_AIRCRAFT, INTERCEPTOR, FORTRESS, AIRCRAFT, DEFAULT_AIRCRAFT_ID, getAircraft, isAircraftId, canPurchaseAircraft, assertAircraftConfigs, type AircraftConfig, type AircraftAvailability, type AircraftUnlock, type AircraftAbility, type AircraftPurchaseReason, type AircraftPurchaseCheck } from './config/aircraft';
 export {
-  STARTER_AIRCRAFT,
-  INTERCEPTOR,
-  FORTRESS,
-  AIRCRAFT,
-  DEFAULT_AIRCRAFT_ID,
-  getAircraft,
-  isAircraftId,
-  canPurchaseAircraft,
-  assertAircraftConfigs,
-  type AircraftConfig,
-  type AircraftAvailability,
-  type AircraftUnlock,
-  type AircraftAbility,
-  type AircraftPurchaseReason,
-  type AircraftPurchaseCheck,
-} from './config/aircraft';
+  gameSettingsSchema,
+  movementControlSchema,
+  shootingControlSchema,
+  DEFAULT_SETTINGS,
+  parseSettings,
+  type GameSettings,
+  type MovementControl,
+  type ShootingControl,
+} from './config/settings';
 export {
   UPGRADES,
   DEFAULT_UPGRADE_LEVELS,

@@ -7,6 +7,7 @@ import { aircraftRoutes } from './aircraft/routes';
 import { AppError } from './errors';
 import { progressRoutes } from './progress/routes';
 import { healthRoutes } from './routes/health';
+import { settingsRoutes } from './settings/routes';
 import { upgradeRoutes } from './upgrades/routes';
 
 export interface BuildAppOptions {
@@ -51,6 +52,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(progressRoutes);
   await app.register(upgradeRoutes);
   await app.register(aircraftRoutes);
+  await app.register(settingsRoutes);
 
   return app;
 }

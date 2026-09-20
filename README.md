@@ -5,11 +5,10 @@ modern web application. Top-down 2D gameplay with pseudo-depth (parallax,
 scaling, layering), a 50-level campaign, persistent progression, upgrades and an
 aircraft shop.
 
-> Status: **Phase 10 — Boss System.** Account auth, five data-driven levels,
-> centralized scoring/reward, server-authoritative progression, upgrades,
-> aircraft and a reusable boss framework with a boss health bar, multi-phase
-> attacks and level integration (bosses on selected levels). Later phases add
-> settings/UX polish and content expansion.
+> Status: **Phase 11 — Settings & UX.** Account auth, five data-driven levels,
+> scoring/reward, server-authoritative progression, upgrades, aircraft, bosses,
+> and player settings (controls + audio) with pause, profile, menu navigation
+> and loading/error states. A final content/polish phase remains.
 
 ## Overview
 
@@ -151,6 +150,8 @@ httpOnly refresh cookie.
 | `GET` | `/api/v1/aircraft` | Bearer | Return ownership/equipped state for every aircraft |
 | `POST` | `/api/v1/aircraft/:aircraftId/purchase` | Bearer | Buy an aircraft; server validates price and balance |
 | `POST` | `/api/v1/aircraft/:aircraftId/equip` | Bearer | Equip an owned aircraft |
+| `GET` | `/api/v1/settings` | Bearer | Return the player's controls/audio settings |
+| `PUT` | `/api/v1/settings` | Bearer | Validate and persist settings |
 | `GET` | `/api/health` | – | Server health |
 | `GET` | `/api/health/db` | – | Database connectivity |
 

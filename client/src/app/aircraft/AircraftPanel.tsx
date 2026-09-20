@@ -12,6 +12,7 @@ interface AircraftPanelProps {
   states: AircraftStateData[];
   onPurchase: (aircraftId: string) => Promise<void>;
   onEquip: (aircraftId: string) => Promise<void>;
+  onClose?: () => void;
 }
 
 function stateFor(states: AircraftStateData[], id: string): AircraftStateData {
@@ -28,7 +29,7 @@ function statLine(aircraft: AircraftConfig): string {
   ].join(' · ');
 }
 
-export function AircraftPanel({ profile, states, onPurchase, onEquip }: AircraftPanelProps) {
+export function AircraftPanel({ profile, states, onPurchase, onEquip, onClose }: AircraftPanelProps) {
   const [pending, setPending] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
@@ -55,6 +56,11 @@ export function AircraftPanel({ profile, states, onPurchase, onEquip }: Aircraft
       <div className="aircraft__header">
         <h2>Aircraft</h2>
         <span className="upgrades__coins">Coins: {profile.coins}</span>
+        {onClose && (
+          <button type="button" className="app__button" onClick={onClose}>
+            Close
+          </button>
+        )}
       </div>
 
       {message && (

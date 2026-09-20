@@ -1,4 +1,4 @@
-import type { CompleteLevelResponse, UpgradeLevels } from '@game/shared';
+import type { CompleteLevelResponse, GameSettings, UpgradeLevels } from '@game/shared';
 
 /**
  * Progress bridge injected by the React shell into the game. It keeps the game
@@ -16,6 +16,12 @@ export interface GameProgressBridge {
   upgradeLevels?: UpgradeLevels;
   /** Equipped aircraft id applied to the loadout. */
   aircraftId?: string;
+  /** Current player settings (controls and audio). */
+  settings?: GameSettings;
+  /** Pause menu: exit the game back to the menu. */
+  onExitToMenu?: () => void;
+  /** Pause menu: open the settings panel. */
+  onOpenSettings?: () => void;
   /**
    * Submits a level completion to the server. Returns the server response, or
    * `null` when it could not be saved (e.g. offline).

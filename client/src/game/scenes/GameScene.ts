@@ -1,4 +1,5 @@
 import {
+  DEFAULT_SETTINGS,
   createWorld,
   getAircraft,
   getNextLevelId,
@@ -7,6 +8,7 @@ import {
   type AircraftConfig,
   type CompleteLevelResponse,
   type GameEvent,
+  type GameSettings,
   type LevelConfig,
   type UpgradeLevels,
   type World,
@@ -14,6 +16,7 @@ import {
 import Phaser from 'phaser';
 
 import { CAMPAIGN } from '../config';
+import { AudioManager } from '../audio/AudioManager';
 import { PlayerInput } from '../input/PlayerInput';
 import type { GameProgressBridge } from '../progressBridge';
 import { Effects } from '../render/Effects';
@@ -21,10 +24,12 @@ import { WorldRenderer } from '../render/WorldRenderer';
 import { createGameTextures } from '../textures';
 import { Hud } from '../ui/Hud';
 
+const PAUSE_ITEMS = ['Resume', 'Settings', 'Restart Level', 'Exit to Menu'];
+
 /**
  * Gameplay scene. It owns the timing loop, drives the level system and wires
- * the pure simulation to the input, renderer, effects, HUD and progress bridge.
- * It contains no gameplay rules and no API code.
+ * the pure simulation to the input, renderer, effects, audio, HUD and progress
+ * bridge. It contains no gameplay rules and no API code.
  */
 export class GameScene extends Phaser.Scene {
   private world!: World;
@@ -37,9 +42,20 @@ export class GameScene extends Phaser.Scene {
   private controls!: PlayerInput;
   private worldRenderer!: WorldRenderer;
   private effects!: Effects;
+  private audio!: AudioManager;
   private hud!: Hud;
+
+  private paused = false;
+  private pauseIndex = 0;
+
   private restartKey?: Phaser.Input.Keyboard.Key;
   private nextKey?: Phaser.Input.Keyboard.Key;
+  private pauseKey?: Phaser.Input.Keyboard.Key;
+  private menuUpKey?: Phaser.Input.Keyboard.Key;
+  private menuDownKey?: Phaser.Input.Keyboard.Key;
+  private arrowUpKey?: Phaser.Input.Keyboard.Key;
+  private arrowDownKey?: Phaser.Input.Keyboard.Key;
+  private confirmKey?: Phaser.Input.Keyboard.Key;
 
   constructor(private readonly bridge?: GameProgressBridge) {
     super('Game');
@@ -53,27 +69,55 @@ export class GameScene extends Phaser.Scene {
 
     this.controls = new PlayerInput(this);
     this.effects = new Effects(this);
+    this.audio = new AudioManager();
+    this.audio.applySettings(this.currentSettings());
     this.hud = new Hud(this);
-    this.restartKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-    this.nextKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.N);
+
+    const keyCodes = Phaser.Input.Keyboard.KeyCodes;
+    this.restartKey = this.input.keyboard?.addKey(keyCodes.R);
+    this.nextKey = this.input.keyboard?.addKey(keyCodes.N);
+    this.pauseKey = this.input.keyboard?.addKey(keyCodes.ESC);
+    this.menuUpKey = this.input.keyboard?.addKey(keyCodes.W);
+    this.menuDownKey = this.input.keyboard?.addKey(keyCodes.S);
+    this.arrowUpKey = this.input.keyboard?.addKey(keyCodes.UP);
+    this.arrowDownKey = this.input.keyboard?.addKey(keyCodes.DOWN);
+    this.confirmKey = this.input.keyboard?.addKey(keyCodes.ENTER);
 
     const startId = this.bridge?.currentLevelId;
     const startIndex = startId ? CAMPAIGN.findIndex((level) => level.id === startId) : 0;
     this.loadLevel(startIndex >= 0 ? startIndex : 0);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.controls.dispose();
       this.worldRenderer?.destroy();
       this.effects.destroy();
+      this.audio.dispose();
       this.hud.destroy();
     });
   }
 
   override update(_time: number, deltaMs: number): void {
+    this.audio.applySettings(this.currentSettings());
+
+    if (
+      this.pressed(this.pauseKey) &&
+      (this.world.status === 'ready' || this.world.status === 'playing')
+    ) {
+      this.paused = !this.paused;
+      this.pauseIndex = 0;
+    }
+
+    if (this.paused) {
+      this.handlePauseInput();
+      this.worldRenderer.sync(this.world);
+      this.hud.update(this.world);
+      this.hud.showPause(PAUSE_ITEMS, this.pauseIndex);
+      return;
+    }
+
     switch (this.world.status) {
       case 'ready':
       case 'playing':
-        stepWorld(this.world, this.controls.read(), deltaMs / 1000);
+        stepWorld(this.world, this.controls.read(this.currentSettings()), deltaMs / 1000);
         break;
       case 'levelComplete':
         if (this.pressed(this.restartKey)) {
@@ -96,14 +140,20 @@ export class GameScene extends Phaser.Scene {
     this.updateOverlay();
   }
 
+  private currentSettings(): GameSettings {
+    return this.bridge?.settings ?? DEFAULT_SETTINGS;
+  }
+
   private loadLevel(index: number): void {
     this.level = CAMPAIGN[index];
     this.world = createWorld(this.level, this.loadoutOptions());
     this.completionSynced = false;
     this.serverReward = null;
+    this.paused = false;
 
     this.worldRenderer?.destroy();
     this.worldRenderer = new WorldRenderer(this, this.level);
+    this.cameras.main.fadeIn(200, 5, 7, 15);
     this.hud.hideOverlay();
   }
 
@@ -111,6 +161,7 @@ export class GameScene extends Phaser.Scene {
     this.world = createWorld(this.level, this.loadoutOptions());
     this.completionSynced = false;
     this.serverReward = null;
+    this.paused = false;
     this.worldRenderer.reset();
     this.hud.hideOverlay();
   }
@@ -133,6 +184,36 @@ export class GameScene extends Phaser.Scene {
     const nextIndex = CAMPAIGN.findIndex((level) => level.id === nextId);
     if (nextIndex >= 0) {
       this.loadLevel(nextIndex);
+    }
+  }
+
+  private handlePauseInput(): void {
+    if (this.pressed(this.menuUpKey) || this.pressed(this.arrowUpKey)) {
+      this.pauseIndex = (this.pauseIndex + PAUSE_ITEMS.length - 1) % PAUSE_ITEMS.length;
+    }
+    if (this.pressed(this.menuDownKey) || this.pressed(this.arrowDownKey)) {
+      this.pauseIndex = (this.pauseIndex + 1) % PAUSE_ITEMS.length;
+    }
+    if (this.pressed(this.confirmKey)) {
+      this.selectPauseItem();
+    }
+  }
+
+  private selectPauseItem(): void {
+    switch (PAUSE_ITEMS[this.pauseIndex]) {
+      case 'Resume':
+        this.paused = false;
+        break;
+      case 'Settings':
+        this.bridge?.onOpenSettings?.();
+        break;
+      case 'Restart Level':
+        this.restart();
+        break;
+      case 'Exit to Menu':
+        this.paused = false;
+        this.bridge?.onExitToMenu?.();
+        break;
     }
   }
 
@@ -177,10 +258,7 @@ export class GameScene extends Phaser.Scene {
       totalScore: result.totalScore,
       coins: result.coins,
     };
-    const bestScore = Math.max(
-      this.bestScores.get(result.levelId) ?? 0,
-      reward.totalScore,
-    );
+    const bestScore = Math.max(this.bestScores.get(result.levelId) ?? 0, reward.totalScore);
     const merged = { ...result, ...reward };
 
     const nextId = getNextLevelId(result.levelId);
@@ -218,49 +296,60 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Maps simulation events to effects and camera feedback. */
+  /** Maps simulation events to effects, audio and camera feedback. */
   private handleEvents(events: GameEvent[]): void {
     for (const event of events) {
       switch (event.type) {
         case 'shotFired':
         case 'enemyShot':
           this.effects.muzzleAt(event.position);
+          this.audio.playSfx('shoot');
           break;
         case 'enemyHit':
           this.effects.impactAt(event.position);
           break;
         case 'enemyDestroyed':
           this.effects.explosionAt(event.position);
+          this.audio.playSfx('explosion');
           this.cameras.main.shake(80, 0.002);
           break;
-        case 'playerHit':
-          this.effects.hitAt(event.position);
-          this.cameras.main.shake(160, 0.006);
-          this.worldRenderer.flashPlayer();
-          break;
-        case 'playerDestroyed':
-          this.effects.explosionAt(event.position, 30);
-          this.cameras.main.shake(300, 0.01);
-          break;
         case 'bossSpawned':
+          this.audio.playSfx('boss');
           this.cameras.main.shake(200, 0.004);
           break;
         case 'bossPhase':
           this.effects.explosionAt(event.position, 10);
+          this.audio.playSfx('boss');
           this.cameras.main.shake(160, 0.006);
           break;
         case 'bossShot':
           this.effects.muzzleAt(event.position);
+          this.audio.playSfx('shoot');
           break;
         case 'bossHit':
           this.effects.impactAt(event.position);
           break;
         case 'bossDefeated':
           this.effects.explosionAt(event.position, 44);
+          this.audio.playSfx('explosion');
           this.cameras.main.shake(320, 0.012);
           break;
+        case 'playerHit':
+          this.effects.hitAt(event.position);
+          this.audio.playSfx('hit');
+          this.cameras.main.shake(160, 0.006);
+          this.worldRenderer.flashPlayer();
+          break;
+        case 'playerDestroyed':
+          this.effects.explosionAt(event.position, 30);
+          this.audio.playSfx('explosion');
+          this.cameras.main.shake(300, 0.01);
+          break;
         case 'levelStart':
+          this.audio.playSfx('jingle');
+          break;
         case 'levelComplete':
+          this.audio.playSfx('jingle');
           break;
       }
     }

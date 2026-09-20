@@ -341,3 +341,34 @@ level director spawns the boss after all waves and obstacle sections are emitted
 **Why.** The level engine stays boss-agnostic (it only knows a reference id), so
 which levels have bosses is content. Tying completion to the defeat flag makes a
 boss a real gate without hard-coding a specific boss anywhere in the engine.
+
+## ADR-0037: Small, validated settings persisted as JSON
+
+**Decision.** Settings are declared in `config/settings.ts` with a Zod schema and
+defaults, stored as a JSON string on `PlayerProfile.settingsJson`, and exposed
+through `GET`/`PUT /api/v1/settings`. Reads merge stored values over defaults;
+writes validate the full object.
+**Why.** The settings set is small and flat, so a single JSON column avoids a
+column per option while still being validated. Merging on read keeps older or
+partial records working, and server-side validation prevents malformed settings
+from reaching the game.
+
+## ADR-0038: The shell owns settings; the game consumes them via the bridge
+
+**Decision.** The React shell persists settings and injects them through the
+progress bridge. `PlayerInput.read(settings)` applies movement/shooting modes and
+`AudioManager.applySettings` applies audio; both read the current settings each
+frame.
+**Why.** This keeps the game free of API code while allowing live changes (e.g.
+toggling music, switching control mode) without remounting the game. Reading per
+frame is trivial and avoids a subscription layer.
+
+## ADR-0039: Pause stops the simulation; menus are shell-side or overlay
+
+**Decision.** ESC toggles a pause flag that skips `stepWorld`; the pause menu is
+rendered in the HUD and navigated by keyboard. "Settings" opens the React panel
+via a bridge callback while staying paused, and "Exit to Menu" returns the shell
+to the menu (unmounting the game).
+**Why.** Stopping the simulation at the single `stepWorld` call is the simplest
+correct pause. Reusing the React settings panel avoids duplicating the settings
+UI in canvas, and a menu screen gives navigation without a major new system.

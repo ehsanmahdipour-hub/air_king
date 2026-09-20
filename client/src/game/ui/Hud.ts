@@ -154,6 +154,12 @@ export class Hud {
     this.showOverlay('LEVEL COMPLETE', rows.join('\n'), '#6ee7a8');
   }
 
+  /** Pause menu rendered in the shared overlay with a selection marker. */
+  showPause(items: string[], selectedIndex: number): void {
+    const lines = items.map((item, index) => `${index === selectedIndex ? '> ' : '  '}${item}`);
+    this.showOverlay('PAUSED', `${lines.join('\n')}\n\nW/S or ↑/↓ · Enter · ESC to resume`, '#7fd1ff');
+  }
+
   hideOverlay(): void {
     this.setOverlayVisible(false);
   }

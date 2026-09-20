@@ -163,10 +163,27 @@ increment, tested, reviewed and merged before the next begins.
 - Verified in a browser: boss spawn, health bar, attack patterns, phase
   transitions, defeat, reward and level completion.
 
-## Phase 11 preview (next, pending approval)
+## Phase 11 acceptance criteria (complete)
 
-Settings & UX: control selection, shooting mode, audio settings, pause menu,
-user profile and logout, plus UX improvements.
+- Persisted, validated settings: movement (keyboard/mouse), shooting
+  (space/mouse/both), music/sfx toggles and master/music/sfx volumes.
+- `GET`/`PUT /api/v1/settings` with server-side validation and default merging.
+- Control switching affects gameplay through `PlayerInput`; audio settings drive
+  a Web Audio manager.
+- ESC pause that stops the simulation, with Resume / Settings / Restart Level /
+  Exit to Menu.
+- Profile page with account and progression information.
+- Menu navigation, loading and error states with retry, button feedback and a
+  level-start fade; logout clears local auth state.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm build` pass.
+- Verified: settings persistence, control switching, audio toggles, pause/resume,
+  restart, exit to menu, logout and login again.
+
+## Phase 12 preview (next, pending approval)
+
+Content expansion & polish: 50 levels, more environments/enemy combinations,
+additional aircraft/weapons, more bosses, improved effects/UI/audio and
+performance work.
 
 
 

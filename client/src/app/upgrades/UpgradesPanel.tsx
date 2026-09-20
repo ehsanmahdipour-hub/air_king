@@ -14,6 +14,7 @@ interface UpgradesPanelProps {
   profile: PlayerProfileData;
   levels: UpgradeLevels;
   onPurchase: (upgradeId: UpgradeId) => Promise<void>;
+  onClose?: () => void;
 }
 
 function formatValue(upgrade: UpgradeConfig, value: number): string {
@@ -23,7 +24,7 @@ function formatValue(upgrade: UpgradeConfig, value: number): string {
   return `+${value}`;
 }
 
-export function UpgradesPanel({ profile, levels, onPurchase }: UpgradesPanelProps) {
+export function UpgradesPanel({ profile, levels, onPurchase, onClose }: UpgradesPanelProps) {
   const [pending, setPending] = useState<UpgradeId | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
@@ -48,6 +49,11 @@ export function UpgradesPanel({ profile, levels, onPurchase }: UpgradesPanelProp
       <div className="upgrades__header">
         <h2>Upgrades</h2>
         <span className="upgrades__coins">Coins: {profile.coins}</span>
+        {onClose && (
+          <button type="button" className="app__button" onClick={onClose}>
+            Close
+          </button>
+        )}
       </div>
 
       {message && (

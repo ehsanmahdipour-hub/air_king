@@ -1,11 +1,13 @@
 import {
+  DEFAULT_SETTINGS,
   DEFAULT_UPGRADE_LEVELS,
   type AircraftStateData,
+  type GameSettings,
   type PlayerProfileData,
   type UpgradeId,
   type UpgradeLevels,
 } from '@game/shared';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AuthForm } from './auth/AuthForm';
 import { useAuth } from './auth/AuthContext';
@@ -14,11 +16,17 @@ import { equipAircraft, getAircraft, purchaseAircraft } from './aircraft/aircraf
 import { AircraftPanel } from './aircraft/AircraftPanel';
 import { GameStage } from './GameStage';
 import { completeLevel, getProgress } from './progress/progressApi';
+import { ProfilePanel } from './profile/ProfilePanel';
+import { getSettings, updateSettings } from './settings/settingsApi';
+import { SettingsPanel } from './settings/SettingsPanel';
 import { getUpgrades, purchaseUpgrade } from './upgrades/upgradesApi';
 import { UpgradesPanel } from './upgrades/UpgradesPanel';
 import type { GameProgressBridge } from '../game/progressBridge';
 
 type SessionCheck = 'idle' | 'checking' | 'ok' | 'error';
+type LoadState = 'loading' | 'ready' | 'error';
+type Screen = 'menu' | 'playing';
+type Panel = 'none' | 'aircraft' | 'upgrades' | 'settings' | 'profile';
 
 export function App() {
   return (
@@ -33,8 +41,7 @@ export function App() {
       </main>
 
       <footer className="app__footer">
-        Phase 9 — aircraft shop · move with WASD or the mouse · fire with Space or click · press R
-        to replay · press N for the next level when complete
+        Phase 11 — settings & UX · WASD/mouse to fly · Space/click to fire · ESC to pause
       </footer>
     </div>
   );
@@ -68,24 +75,32 @@ function SessionControls() {
 }
 
 /**
- * Authenticated view. Owns progression, upgrade and aircraft networking: it
- * loads the player's persisted state, renders the shop panels and injects a
- * bridge into the game so completions are validated and saved and the equipped
- * aircraft/upgrades drive the loadout.
+ * Authenticated shell. Owns progression, upgrades, aircraft and settings
+ * networking, renders the menu/panels, and injects a bridge into the game so
+ * completions persist and the equipped aircraft/upgrades/settings drive play.
  */
 function AccountView() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [sessionCheck, setSessionCheck] = useState<SessionCheck>('idle');
+  const [loadState, setLoadState] = useState<LoadState>('loading');
+  const [screen, setScreen] = useState<Screen>('menu');
+  const [panel, setPanel] = useState<Panel>('none');
+
   const [profile, setProfile] = useState<PlayerProfileData | null>(null);
   const [upgradeLevels, setUpgradeLevels] = useState<UpgradeLevels | null>(null);
   const [aircraft, setAircraft] = useState<AircraftStateData[] | null>(null);
-  const [showUpgrades, setShowUpgrades] = useState(false);
-  const [showAircraft, setShowAircraft] = useState(false);
+  const [settings, setSettings] = useState<GameSettings | null>(null);
 
   const bridge = useMemo<GameProgressBridge>(
     () => ({
       bestScores: new Map<string, number>(),
       completedLevelIds: new Set<string>(),
+      settings: DEFAULT_SETTINGS,
+      onExitToMenu: () => {
+        setScreen('menu');
+        setPanel('none');
+      },
+      onOpenSettings: () => setPanel('settings'),
       onLevelComplete: async (levelId, score) => {
         const response = await completeLevel(levelId, score);
         setProfile(response.profile);
@@ -96,42 +111,42 @@ function AccountView() {
     [],
   );
 
-  useEffect(() => {
-    let cancelled = false;
+  const load = useCallback(async () => {
+    setLoadState('loading');
+    try {
+      const [progress, upgrades, roster, settingsResponse] = await Promise.all([
+        getProgress(),
+        getUpgrades(),
+        getAircraft(),
+        getSettings(),
+      ]);
 
-    Promise.all([getProgress(), getUpgrades(), getAircraft()])
-      .then(([progress, upgrades, roster]) => {
-        if (cancelled) {
-          return;
+      setProfile(progress.profile);
+      bridge.currentLevelId = progress.profile.currentLevelId;
+      bridge.aircraftId = progress.profile.equippedAircraftId;
+      for (const level of progress.levels) {
+        if (level.completed) {
+          bridge.completedLevelIds.add(level.levelId);
         }
-        setProfile(progress.profile);
-        bridge.currentLevelId = progress.profile.currentLevelId;
-        bridge.aircraftId = progress.profile.equippedAircraftId;
-        for (const level of progress.levels) {
-          if (level.completed) {
-            bridge.completedLevelIds.add(level.levelId);
-          }
-          if (level.bestScore > 0) {
-            bridge.bestScores.set(level.levelId, level.bestScore);
-          }
+        if (level.bestScore > 0) {
+          bridge.bestScores.set(level.levelId, level.bestScore);
         }
-        setUpgradeLevels(upgrades.upgrades);
-        bridge.upgradeLevels = upgrades.upgrades;
-        setAircraft(roster.aircraft);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          // Play without persisted progression if the API is unreachable.
-          setUpgradeLevels(DEFAULT_UPGRADE_LEVELS);
-          bridge.upgradeLevels = DEFAULT_UPGRADE_LEVELS;
-          setAircraft([]);
-        }
-      });
+      }
 
-    return () => {
-      cancelled = true;
-    };
+      setUpgradeLevels(upgrades.upgrades);
+      bridge.upgradeLevels = upgrades.upgrades;
+      setAircraft(roster.aircraft);
+      setSettings(settingsResponse.settings);
+      bridge.settings = settingsResponse.settings;
+      setLoadState('ready');
+    } catch {
+      setLoadState('error');
+    }
   }, [bridge]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   async function refreshRoster(): Promise<void> {
     const roster = await getAircraft();
@@ -144,10 +159,7 @@ function AccountView() {
     const response = await purchaseUpgrade(upgradeId);
     setProfile(response.profile);
     setUpgradeLevels((current) => {
-      const next = {
-        ...(current ?? DEFAULT_UPGRADE_LEVELS),
-        [upgradeId]: response.upgrade.level,
-      };
+      const next = { ...(current ?? DEFAULT_UPGRADE_LEVELS), [upgradeId]: response.upgrade.level };
       bridge.upgradeLevels = next;
       return next;
     });
@@ -163,6 +175,12 @@ function AccountView() {
     await refreshRoster();
   }
 
+  async function handleSettingsChange(next: GameSettings): Promise<void> {
+    const response = await updateSettings(next);
+    setSettings(response.settings);
+    bridge.settings = response.settings;
+  }
+
   async function verifySession(): Promise<void> {
     setSessionCheck('checking');
     try {
@@ -173,7 +191,54 @@ function AccountView() {
     }
   }
 
-  const ready = upgradeLevels !== null && aircraft !== null;
+  function openPanel(next: Panel): void {
+    setPanel(next);
+  }
+
+  function renderPanel() {
+    if (panel === 'aircraft' && profile && aircraft) {
+      return (
+        <AircraftPanel
+          profile={profile}
+          states={aircraft}
+          onPurchase={handlePurchaseAircraft}
+          onEquip={handleEquipAircraft}
+          onClose={() => setPanel('none')}
+        />
+      );
+    }
+    if (panel === 'upgrades' && profile && upgradeLevels) {
+      return (
+        <UpgradesPanel
+          profile={profile}
+          levels={upgradeLevels}
+          onPurchase={handlePurchaseUpgrade}
+          onClose={() => setPanel('none')}
+        />
+      );
+    }
+    if (panel === 'settings' && settings) {
+      return (
+        <SettingsPanel
+          settings={settings}
+          onChange={handleSettingsChange}
+          onClose={() => setPanel('none')}
+        />
+      );
+    }
+    if (panel === 'profile' && profile) {
+      return (
+        <ProfilePanel
+          user={user}
+          profile={profile}
+          completedLevels={bridge.completedLevelIds.size}
+          onLogout={() => void logout()}
+          onClose={() => setPanel('none')}
+        />
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="account">
@@ -187,19 +252,23 @@ function AccountView() {
             {profile.equippedAircraftId}
           </span>
         )}
-        <button
-          type="button"
-          className="app__button"
-          onClick={() => setShowAircraft((visible) => !visible)}
-        >
-          {showAircraft ? 'Hide aircraft' : 'Aircraft'}
+        {screen === 'playing' && (
+          <button
+            type="button"
+            className="app__button"
+            onClick={() => {
+              setScreen('menu');
+              setPanel('none');
+            }}
+          >
+            Menu
+          </button>
+        )}
+        <button type="button" className="app__button" onClick={() => openPanel('profile')}>
+          Profile
         </button>
-        <button
-          type="button"
-          className="app__button"
-          onClick={() => setShowUpgrades((visible) => !visible)}
-        >
-          {showUpgrades ? 'Hide upgrades' : 'Upgrades'}
+        <button type="button" className="app__button" onClick={() => openPanel('settings')}>
+          Settings
         </button>
         <button
           type="button"
@@ -207,34 +276,57 @@ function AccountView() {
           onClick={() => void verifySession()}
           disabled={sessionCheck === 'checking'}
         >
-          {sessionCheck === 'checking' ? 'Checking…' : 'Verify protected route'}
+          {sessionCheck === 'checking' ? 'Checking…' : 'Verify session'}
         </button>
-        {sessionCheck === 'ok' && <span className="account__ok">Protected route OK</span>}
-        {sessionCheck === 'error' && <span className="account__error">Protected route failed</span>}
+        {sessionCheck === 'ok' && <span className="account__ok">Session OK</span>}
+        {sessionCheck === 'error' && <span className="account__error">Session failed</span>}
       </div>
 
-      {showAircraft && profile && aircraft && (
-        <AircraftPanel
-          profile={profile}
-          states={aircraft}
-          onPurchase={handlePurchaseAircraft}
-          onEquip={handleEquipAircraft}
-        />
-      )}
+      <div className="account__body">
+        {loadState === 'loading' && <p className="app__message">Loading your profile…</p>}
 
-      {showUpgrades && profile && upgradeLevels && (
-        <UpgradesPanel
-          profile={profile}
-          levels={upgradeLevels}
-          onPurchase={handlePurchaseUpgrade}
-        />
-      )}
+        {loadState === 'error' && (
+          <div className="app__message">
+            <p>Could not load your profile. Check your connection and try again.</p>
+            <button type="button" className="app__button" onClick={() => void load()}>
+              Retry
+            </button>
+          </div>
+        )}
 
-      {ready ? (
-        <GameStage bridge={bridge} />
-      ) : (
-        <p className="app__message">Loading progression…</p>
-      )}
+        {loadState === 'ready' && screen === 'playing' && <GameStage bridge={bridge} />}
+
+        {loadState === 'ready' && screen === 'menu' && panel === 'none' && (
+          <nav className="menu">
+            <button
+              type="button"
+              className="menu__item"
+              onClick={() => {
+                setPanel('none');
+                setScreen('playing');
+              }}
+            >
+              Play
+            </button>
+            <button type="button" className="menu__item" onClick={() => openPanel('aircraft')}>
+              Aircraft
+            </button>
+            <button type="button" className="menu__item" onClick={() => openPanel('upgrades')}>
+              Upgrades
+            </button>
+            <button type="button" className="menu__item" onClick={() => openPanel('settings')}>
+              Settings
+            </button>
+            <button type="button" className="menu__item" onClick={() => openPanel('profile')}>
+              Profile
+            </button>
+          </nav>
+        )}
+
+        {loadState === 'ready' && panel !== 'none' && (
+          <div className="panel-overlay">{renderPanel()}</div>
+        )}
+      </div>
     </div>
   );
 }
