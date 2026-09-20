@@ -454,3 +454,15 @@ generally stronger or more specialized (Scout, Heavy, Tank, Elite, Premium).
 models communicate *why* an aircraft costs more, and capability-ordered pricing
 keeps the price-to-power relationship understandable. Models are inline SVG, so
 they stay lightweight and replaceable.
+
+## ADR-0048: Aircraft visuals are driven by the resolved loadout
+
+**Decision.** Add `aircraftId` to `ResolvedLoadout` and select the player texture
+from it in the renderer (`aircraftTextureKey`), with one procedural model per
+aircraft. The hangar also shows the weapon and projectile count.
+**Why.** Aircraft stats and projectile counts already flowed correctly, but the
+player sprite was a single hardcoded texture, so equipping an aircraft produced no
+visible change and looked like the stats were ignored. Deriving the model from the
+same resolved loadout the simulation uses guarantees the shop display, gameplay
+stats and the rendered aircraft stay consistent, and avoids a second source of
+truth for the equipped aircraft.

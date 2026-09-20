@@ -103,6 +103,16 @@ describe('resolveLoadout', () => {
     );
   });
 
+  it('exposes the equipped aircraft id and its projectile count', () => {
+    expect(resolveLoadout({ aircraft: STARTER_AIRCRAFT }).aircraftId).toBe('starter');
+    expect(resolveLoadout({ aircraft: STARTER_AIRCRAFT }).weapon.projectile.count).toBe(1);
+    expect(resolveLoadout({ aircraft: INTERCEPTOR }).aircraftId).toBe('interceptor');
+    expect(resolveLoadout({ aircraft: INTERCEPTOR }).weapon.projectile.count).toBe(2);
+    expect(resolveLoadout({ aircraft: PHANTOM }).weapon.projectile.count).toBe(2);
+    expect(resolveLoadout({ aircraft: GUNSHIP }).weapon.projectile.count).toBe(3);
+    expect(resolveLoadout({ aircraft: RAPTOR }).weapon.projectile.count).toBe(1);
+  });
+
   it('clamps out-of-range upgrade levels', () => {
     const loadout = resolveLoadout({
       upgrades: levels({ 'aircraft-health': 999, 'weapon-projectile-count': -5 }),

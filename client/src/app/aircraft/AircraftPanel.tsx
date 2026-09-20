@@ -1,6 +1,7 @@
 import {
   AIRCRAFT,
   canPurchaseAircraft,
+  getWeapon,
   type AircraftStateData,
   type PlayerProfileData,
 } from '@game/shared';
@@ -22,6 +23,10 @@ const MAX_STATS = {
   speed: Math.max(...AIRCRAFT.map((aircraft) => aircraft.speed)),
   firePower: Math.max(...AIRCRAFT.map((aircraft) => aircraft.firePower)),
   fireRate: Math.max(...AIRCRAFT.map((aircraft) => aircraft.fireRate)),
+  projectiles: Math.max(
+    ...AIRCRAFT.map((aircraft) => getWeapon(aircraft.weaponId).projectile.count),
+    1,
+  ),
 };
 
 function stateFor(states: AircraftStateData[], id: string): AircraftStateData {
@@ -81,6 +86,7 @@ export function AircraftPanel({
           const unavailable = aircraft.availability !== 'available';
           const purchasable = aircraft.unlock.kind === 'purchase' && !unavailable;
           const affordable = purchasable && profile.coins >= aircraft.price;
+          const weapon = getWeapon(aircraft.weaponId);
 
           return (
             <article className="aircraft-card" key={aircraft.id}>
@@ -106,7 +112,13 @@ export function AircraftPanel({
                 <StatBar label="Speed" value={aircraft.speed} max={MAX_STATS.speed} />
                 <StatBar label="Fire Power" value={aircraft.firePower} max={MAX_STATS.firePower} format={(v) => `${v.toFixed(2)}×`} />
                 <StatBar label="Fire Rate" value={aircraft.fireRate} max={MAX_STATS.fireRate} format={(v) => `${v.toFixed(2)}×`} />
+                <StatBar label="Projectiles" value={weapon.projectile.count} max={MAX_STATS.projectiles} />
               </div>
+
+              <p className="aircraft-card__weapon">
+                Weapon: {weapon.displayName} · {weapon.projectile.count} shot
+                {weapon.projectile.count > 1 ? 's' : ''}
+              </p>
 
               {aircraft.ability && (
                 <p className="aircraft-card__ability">

@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 
+import { AIRCRAFT_TEXTURE_KEYS } from './aircraftVisuals';
+
 /**
  * Procedurally generated textures. All art is produced here so it can be
  * replaced with real sprites later without touching gameplay or the renderer.
@@ -7,7 +9,7 @@ import Phaser from 'phaser';
  * tones and glow accents, kept small for performance.
  */
 export const TEXTURES = {
-  player: 'player',
+  player: AIRCRAFT_TEXTURE_KEYS.starter,
   fighter: 'enemy-fighter',
   bomber: 'enemy-bomber',
   mine: 'enemy-mine',
@@ -46,6 +48,11 @@ export function bossTexture(bossId: string): string {
 
 export function createGameTextures(scene: Phaser.Scene): void {
   createPlayerTexture(scene);
+  createInterceptorTexture(scene);
+  createGunshipTexture(scene);
+  createFortressTexture(scene);
+  createPhantomTexture(scene);
+  createRaptorTexture(scene);
   createFighterTexture(scene);
   createBomberTexture(scene);
   createMineTexture(scene);
@@ -124,6 +131,137 @@ function createPlayerTexture(scene: Phaser.Scene): void {
     graphics.fillCircle(24, 17, 4);
     graphics.fillStyle(0xffffff, 0.9);
     graphics.fillCircle(23, 16, 1.4);
+  });
+}
+
+function createInterceptorTexture(scene: Phaser.Scene): void {
+  const size = 48;
+  draw(scene, AIRCRAFT_TEXTURE_KEYS.interceptor!, size, size, (graphics) => {
+    // Forward-swept narrow wings + canards.
+    graphics.fillStyle(0xc98a1b, 1);
+    graphics.fillTriangle(8, 30, 44, 14, 40, 22);
+    graphics.fillTriangle(40, 30, 4, 14, 8, 22);
+    graphics.fillStyle(0xffd166, 1);
+    graphics.fillRect(20, 16, 8, 4);
+    // Slim fuselage.
+    graphics.fillTriangle(24, 2, 20, 44, 28, 44);
+    graphics.fillStyle(0xfff0c2, 1);
+    graphics.fillTriangle(24, 4, 22, 40, 26, 40);
+    // Cockpit.
+    graphics.fillStyle(0x3a2a08, 1);
+    graphics.fillCircle(24, 15, 3.4);
+    graphics.fillStyle(0xffffff, 0.9);
+    graphics.fillCircle(23, 14, 1.2);
+    // Single engine.
+    graphics.fillStyle(0xff9a3c, 1);
+    graphics.fillRect(21, 42, 6, 6);
+  });
+}
+
+function createGunshipTexture(scene: Phaser.Scene): void {
+  const size = 54;
+  draw(scene, AIRCRAFT_TEXTURE_KEYS.gunship!, size, size, (graphics) => {
+    // Wide hull.
+    graphics.fillStyle(0xffb45e, 1);
+    graphics.fillRect(10, 12, 34, 22);
+    graphics.fillStyle(0xffe0a3, 1);
+    graphics.fillRect(14, 16, 26, 14);
+    // Side weapon pods.
+    graphics.fillStyle(0xa8641c, 1);
+    graphics.fillRect(2, 18, 8, 10);
+    graphics.fillRect(44, 18, 8, 10);
+    // Blunt nose.
+    graphics.fillStyle(0xffb45e, 1);
+    graphics.fillTriangle(27, 4, 16, 13, 38, 13);
+    // Cockpit.
+    graphics.fillStyle(0x3a2410, 1);
+    graphics.fillCircle(27, 18, 4);
+    // Twin engines.
+    graphics.fillStyle(0xff9a3c, 1);
+    graphics.fillRect(16, 34, 7, 8);
+    graphics.fillRect(31, 34, 7, 8);
+  });
+}
+
+function createFortressTexture(scene: Phaser.Scene): void {
+  const size = 56;
+  const c = size / 2;
+  draw(scene, AIRCRAFT_TEXTURE_KEYS.fortress!, size, size, (graphics) => {
+    // Stubby wide wings.
+    graphics.fillStyle(0x4b5563, 1);
+    graphics.fillRect(0, 22, 12, 14);
+    graphics.fillRect(44, 22, 12, 14);
+    // Hexagonal armored hull.
+    graphics.fillStyle(0x9aa4b2, 1);
+    graphics.fillTriangle(c, 2, 14, 18, 42, 18);
+    graphics.fillRect(14, 18, 28, 24);
+    graphics.fillTriangle(14, 42, 42, 42, c, 54);
+    graphics.fillStyle(0xcbd5e1, 1);
+    graphics.fillRect(18, 20, 20, 18);
+    graphics.fillStyle(0x6b7280, 1);
+    graphics.fillRect(26, 22, 4, 30);
+    // Cockpit + heavy engines.
+    graphics.fillStyle(0x1f2937, 1);
+    graphics.fillCircle(c, 20, 4.5);
+    graphics.fillStyle(0xff9a3c, 1);
+    graphics.fillRect(16, 48, 8, 6);
+    graphics.fillRect(32, 48, 8, 6);
+  });
+}
+
+function createPhantomTexture(scene: Phaser.Scene): void {
+  const size = 50;
+  draw(scene, AIRCRAFT_TEXTURE_KEYS.phantom!, size, size, (graphics) => {
+    // Swept thin wings.
+    graphics.fillStyle(0x6d28d9, 1);
+    graphics.fillTriangle(4, 34, 25, 18, 25, 28);
+    graphics.fillTriangle(46, 34, 25, 18, 25, 28);
+    // Twin tails.
+    graphics.fillTriangle(19, 28, 23, 28, 21, 42);
+    graphics.fillTriangle(31, 28, 27, 28, 29, 42);
+    // Needle fuselage.
+    graphics.fillStyle(0xc084fc, 1);
+    graphics.fillTriangle(25, 1, 22, 46, 28, 46);
+    graphics.fillStyle(0xe9d5ff, 1);
+    graphics.fillTriangle(25, 4, 23.5, 42, 26.5, 42);
+    // Cockpit.
+    graphics.fillStyle(0x2a0f3a, 1);
+    graphics.fillCircle(25, 13, 3);
+    graphics.fillStyle(0xffffff, 0.9);
+    graphics.fillCircle(24, 12, 1.1);
+    // Twin engines.
+    graphics.fillStyle(0xa855f7, 1);
+    graphics.fillRect(21, 44, 3, 5);
+    graphics.fillRect(26, 44, 3, 5);
+  });
+}
+
+function createRaptorTexture(scene: Phaser.Scene): void {
+  const size = 54;
+  const c = size / 2;
+  draw(scene, AIRCRAFT_TEXTURE_KEYS.raptor!, size, size, (graphics) => {
+    // X-wing blades.
+    graphics.fillStyle(0x0f766e, 1);
+    graphics.fillTriangle(c, 18, 4, 6, 10, 16);
+    graphics.fillTriangle(c, 18, 50, 6, 44, 16);
+    graphics.fillTriangle(c, 30, 8, 44, 15, 34);
+    graphics.fillTriangle(c, 30, 46, 44, 39, 34);
+    // Armored fuselage.
+    graphics.fillStyle(0x7ee7c7, 1);
+    graphics.fillTriangle(c, 2, 19, 48, 35, 48);
+    graphics.fillStyle(0xc9fff0, 1);
+    graphics.fillTriangle(c, 6, 23, 44, 31, 44);
+    // Railgun nose.
+    graphics.fillStyle(0xc9fff0, 1);
+    graphics.fillRect(c - 2, 0, 4, 12);
+    // Cockpit.
+    graphics.fillStyle(0x08302b, 1);
+    graphics.fillCircle(c, 18, 4);
+    graphics.fillStyle(0xffffff, 0.9);
+    graphics.fillCircle(c - 1, 17, 1.3);
+    // Engine.
+    graphics.fillStyle(0x22d3ee, 1);
+    graphics.fillRect(c - 4, 46, 8, 6);
   });
 }
 

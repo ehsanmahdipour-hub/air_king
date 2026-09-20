@@ -15,6 +15,8 @@ import { getWeapon, type ProjectileSpec } from '../config/weapons';
 
 /** Effective player/weapon stats after applying an aircraft and upgrades. */
 export interface ResolvedLoadout {
+  /** Id of the equipped aircraft, used to select its visual model. */
+  aircraftId: string;
   maxHealth: number;
   speed: number;
   /** Flat damage reduction. */
@@ -65,6 +67,7 @@ export function resolveLoadout(input: LoadoutInput = {}): ResolvedLoadout {
   const weaponDamage = (stats.weaponDamage ?? 0) * aircraft.firePower * (stats.aircraftFirePower ?? 1);
 
   return {
+    aircraftId: aircraft.id,
     maxHealth: Math.round(stats.aircraftHealth ?? aircraft.maxHealth),
     speed: stats.aircraftSpeed ?? aircraft.speed,
     armor: Math.max(0, stats.aircraftArmor ?? aircraft.armor),

@@ -175,6 +175,10 @@ testable and replaceable.
   stats with upgrades, so one gameplay implementation serves every aircraft. The
   client passes `bridge.aircraftId` into `createWorld`, so equipping changes the
   loadout on the next level load/restart.
+- The resolved loadout carries `aircraftId`, which the renderer uses to select the
+  visual model (`aircraftVisuals.ts` → `aircraftTextureKey`). Gameplay stats and
+  the rendered model therefore come from the same resolved loadout, so the hangar
+  display, the simulation and the on-screen aircraft cannot diverge.
 
 ### Boss system
 

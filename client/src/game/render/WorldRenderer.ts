@@ -2,6 +2,7 @@ import type { LevelConfig, World } from '@game/shared';
 import Phaser from 'phaser';
 
 import { DEPTH } from '../config';
+import { aircraftTextureKey } from '../aircraftVisuals';
 import { bossTexture, enemyTexture, TEXTURES } from '../textures';
 import { SpritePool } from './SpritePool';
 
@@ -62,6 +63,12 @@ export class WorldRenderer {
 
   sync(world: World): void {
     this.scrollBackground(world.distance);
+
+    // The equipped aircraft selects the visual model, driven by the loadout.
+    const aircraftTexture = aircraftTextureKey(world.loadout.aircraftId);
+    if (this.playerSprite.texture.key !== aircraftTexture) {
+      this.playerSprite.setTexture(aircraftTexture);
+    }
 
     this.playerSprite
       .setPosition(world.player.position.x, world.player.position.y)

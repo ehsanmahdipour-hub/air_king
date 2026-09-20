@@ -12,11 +12,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AuthForm } from './auth/AuthForm';
 import { useAuth } from './auth/AuthContext';
-import { me } from './auth/authApi';
 import { equipAircraft, getAircraft, purchaseAircraft } from './aircraft/aircraftApi';
 import { AircraftPanel } from './aircraft/AircraftPanel';
 import { AirKingsLogo } from './branding/AirKingsLogo';
 import { GameStage } from './GameStage';
+import { GameHeader, type HeaderPanel, type HeaderScreen } from './Header';
 import { LevelsPanel } from './levels/LevelsPanel';
 import { completeLevel, getProgress } from './progress/progressApi';
 import { ProfilePanel } from './profile/ProfilePanel';
@@ -28,8 +28,8 @@ import { UpgradesPanel } from './upgrades/UpgradesPanel';
 import type { GameProgressBridge, LevelCompleteSummary } from '../game/progressBridge';
 
 type LoadState = 'loading' | 'ready' | 'error';
-type Screen = 'menu' | 'playing';
-type Panel = 'none' | 'levels' | 'aircraft' | 'upgrades' | 'settings' | 'profile';
+type Screen = HeaderScreen;
+type Panel = HeaderPanel;
 
 export function App() {
   return (
@@ -178,14 +178,6 @@ function AccountView() {
     setUiAudioSettings(response.settings);
   }
 
-  async function verifySession(): Promise<void> {
-    try {
-      await me();
-    } catch {
-      // The auth layer handles an expired session by returning to the login screen.
-    }
-  }
-
   function continueRun(): void {
     bridge.selectedLevelId = undefined;
     setSummary(null);
@@ -264,62 +256,31 @@ function AccountView() {
 
   return (
     <div className="account">
-      <header className="game-header">
-        <div className="game-header__brand">
-          <AirKingsLogo size={36} />
-          <div className="game-header__titles">
-            <span className="game-header__title">AIR KINGS</span>
-            <span className="game-header__sub">Arcade Air Combat</span>
+      {profile && user ? (
+        <GameHeader
+          username={user.username}
+          profile={profile}
+          levelNumber={levelNumber}
+          screen={screen}
+          panel={panel}
+          onOpen={openPanel}
+          onExitToMenu={() => {
+            setScreen('menu');
+            setPanel('none');
+          }}
+          onLogout={() => void logout()}
+        />
+      ) : (
+        <header className="game-header">
+          <div className="game-header__brand">
+            <AirKingsLogo size={36} />
+            <div className="game-header__titles">
+              <span className="game-header__title">AIR KINGS</span>
+              <span className="game-header__sub">Arcade Air Combat</span>
+            </div>
           </div>
-        </div>
-
-        {profile && (
-          <div className="game-header__stats">
-            <span className="hud-chip">
-              <span className="hud-chip__label">Coins</span>
-              <span className="hud-chip__value">{profile.coins.toLocaleString()}</span>
-            </span>
-            <span className="hud-chip">
-              <span className="hud-chip__label">Level</span>
-              <span className="hud-chip__value">{levelNumber}</span>
-            </span>
-            <span className="hud-chip hud-chip--wide">
-              <span className="hud-chip__label">Aircraft</span>
-              <span className="hud-chip__value">{profile.equippedAircraftId}</span>
-            </span>
-          </div>
-        )}
-
-        <nav className="game-nav">
-          {screen === 'playing' && (
-            <button
-              type="button"
-              className="game-nav__item"
-              onClick={() => {
-                setScreen('menu');
-                setPanel('none');
-              }}
-            >
-              Menu
-            </button>
-          )}
-          <NavButton id="levels" panel={panel} label="Levels" onOpen={openPanel} />
-          <NavButton id="aircraft" panel={panel} label="Aircraft" onOpen={openPanel} />
-          <NavButton id="upgrades" panel={panel} label="Upgrades" onOpen={openPanel} />
-          <NavButton id="settings" panel={panel} label="Settings" onOpen={openPanel} />
-          <NavButton id="profile" panel={panel} label="Profile" onOpen={openPanel} />
-        </nav>
-
-        <div className="game-header__user">
-          <span className="game-header__username">{user?.username}</span>
-          <button type="button" className="app__button" onClick={() => void verifySession()}>
-            Session
-          </button>
-          <button type="button" className="app__button" onClick={() => void logout()}>
-            Log out
-          </button>
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="account__body">
         {loadState === 'loading' && <p className="app__message">Loading your profile…</p>}
@@ -391,25 +352,6 @@ function safeLevelNumber(levelId: string): number {
   } catch {
     return 1;
   }
-}
-
-interface NavButtonProps {
-  id: Panel;
-  panel: Panel;
-  label: string;
-  onOpen: (panel: Panel) => void;
-}
-
-function NavButton({ id, panel, label, onOpen }: NavButtonProps) {
-  return (
-    <button
-      type="button"
-      className={`game-nav__item ${panel === id ? 'game-nav__item--active' : ''}`}
-      onClick={() => onOpen(id)}
-    >
-      {label}
-    </button>
-  );
 }
 
 interface LevelCompleteOverlayProps {

@@ -9,6 +9,7 @@ import { prisma } from '../db/prisma';
 const REGISTER = '/api/v1/auth/register';
 const LOGIN = '/api/v1/auth/login';
 const AIRCRAFT_URL = '/api/v1/aircraft';
+const PROGRESS_URL = '/api/v1/progress';
 
 function purchaseUrl(aircraftId: string): string {
   return `/api/v1/aircraft/${aircraftId}/purchase`;
@@ -185,6 +186,22 @@ describe('aircraft routes', () => {
         owned: true,
         equipped: true,
       });
+      expect(response.json().profile.equippedAircraftId).toBe(INTERCEPTOR.id);
+    });
+
+    it('reflects the equipped aircraft in the progress endpoint', async () => {
+      const { token, userId } = await register(app, 'progress-equip@example.com');
+      await grantCoins(userId, INTERCEPTOR.price);
+      await purchase(app, token, INTERCEPTOR.id);
+      await equip(app, token, INTERCEPTOR.id);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: PROGRESS_URL,
+        headers: authHeader(token),
+      });
+
+      expect(response.statusCode).toBe(200);
       expect(response.json().profile.equippedAircraftId).toBe(INTERCEPTOR.id);
     });
 
