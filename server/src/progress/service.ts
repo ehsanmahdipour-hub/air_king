@@ -1,13 +1,15 @@
 import {
   DEFAULT_ECONOMY_CONFIG,
   DEFAULT_SCORE_CONFIG,
-  calculateCoins,
+  calculateLevelReward,
   getLevel,
   getLevelIndex,
   getNextLevelId,
   isLevelUnlocked,
   maxAchievableScore,
+  parseSettings,
   type CompleteLevelResponse,
+  type PlayerDifficulty,
   type ProgressResponse,
 } from '@game/shared';
 
@@ -20,6 +22,15 @@ import { ensureProfile, toProfileData } from '../profile/profile';
  * survival levels), where a theoretical maximum cannot be computed.
  */
 const UNBOUNDED_SCORE_CEILING = 5_000_000;
+
+/** Reads the player's chosen difficulty from their stored settings. */
+function playerDifficultyFrom(settingsJson: string): PlayerDifficulty {
+  try {
+    return parseSettings(JSON.parse(settingsJson)).difficulty;
+  } catch {
+    return 'normal';
+  }
+}
 
 export async function getProgress(userId: string): Promise<ProgressResponse> {
   const profile = await ensureProfile(prisma, userId);
@@ -81,7 +92,6 @@ export async function completeLevel(
 
   const completionBonus = level.reward.completionBonus;
   const totalScore = score + completionBonus;
-  const coinsForRun = calculateCoins(totalScore, DEFAULT_ECONOMY_CONFIG);
 
   return prisma.$transaction(async (tx) => {
     const profile = await ensureProfile(tx, userId);
@@ -90,9 +100,18 @@ export async function completeLevel(
     });
 
     const firstCompletion = !existing?.completed;
+    // Rewards are server-computed from the player's stored difficulty and are
+    // only granted on the first completion, so replays cannot farm coins.
+    const reward = calculateLevelReward({
+      totalScore,
+      levelNumber: level.levelNumber,
+      difficulty: playerDifficultyFrom(profile.settingsJson),
+      firstCompletion,
+      config: DEFAULT_ECONOMY_CONFIG,
+    });
     const previousBest = existing?.bestScore ?? 0;
     const bestScore = Math.max(previousBest, score);
-    const awardedCoins = firstCompletion ? coinsForRun : 0;
+    const awardedCoins = reward.totalCoins;
     const totalScoreDelta = firstCompletion ? score : Math.max(0, score - previousBest);
     const nextTotalScore = profile.totalScore + totalScoreDelta;
     const nextHighestScore = Math.max(profile.highestScore, totalScore);

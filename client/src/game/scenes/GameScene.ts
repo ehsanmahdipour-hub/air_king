@@ -85,11 +85,12 @@ export class GameScene extends Phaser.Scene {
     this.arrowDownKey = this.input.keyboard?.addKey(keyCodes.DOWN);
     this.confirmKey = this.input.keyboard?.addKey(keyCodes.ENTER);
 
-    const startId = this.bridge?.currentLevelId;
+    const startId = this.bridge?.selectedLevelId ?? this.bridge?.currentLevelId;
     const startIndex = startId ? CAMPAIGN.findIndex((level) => level.id === startId) : 0;
     this.loadLevel(startIndex >= 0 ? startIndex : 0);
 
     if (this.bridge) {
+      this.bridge.selectedLevelId = undefined;
       this.bridge.commands = {
         nextLevel: () => this.goToNextLevel(),
         replayLevel: () => this.restart(),

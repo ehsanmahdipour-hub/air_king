@@ -31,6 +31,28 @@ describe('aircraft catalog', () => {
       /negative price/,
     );
   });
+
+  it('orders the roster by price with a distinct role per aircraft', () => {
+    const prices = AIRCRAFT.map((aircraft) => aircraft.price);
+    for (let index = 1; index < prices.length; index += 1) {
+      expect(prices[index]!).toBeGreaterThan(prices[index - 1]!);
+    }
+
+    const roles = new Set(AIRCRAFT.map((aircraft) => aircraft.role));
+    expect(roles.size).toBe(AIRCRAFT.length);
+  });
+
+  it('gives each aircraft a clear specialty', () => {
+    const byId = new Map(AIRCRAFT.map((aircraft) => [aircraft.id, aircraft]));
+    const maxOf = (pick: (aircraft: (typeof AIRCRAFT)[number]) => number) =>
+      AIRCRAFT.reduce((best, aircraft) => (pick(aircraft) > pick(best) ? aircraft : best));
+
+    expect(maxOf((aircraft) => aircraft.firePower).id).toBe('raptor');
+    expect(maxOf((aircraft) => aircraft.speed).id).toBe('phantom');
+    expect(maxOf((aircraft) => aircraft.maxHealth).id).toBe('fortress');
+    expect(maxOf((aircraft) => aircraft.armor).id).toBe('fortress');
+    expect(byId.get('raptor')!.price).toBeGreaterThan(byId.get('phantom')!.price);
+  });
 });
 
 describe('canPurchaseAircraft', () => {

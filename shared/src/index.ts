@@ -2,9 +2,10 @@
 export {
   economyConfigSchema,
   DEFAULT_ECONOMY_CONFIG,
+  difficultyRewardMultiplier,
   type EconomyConfig,
 } from './config/economy';
-export { calculateCoins } from './core/rewards';
+export { calculateCoins, calculateLevelReward, type LevelRewardInput, type LevelRewardBreakdown } from './core/rewards';
 
 // Scoring
 export {

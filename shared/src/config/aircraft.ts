@@ -22,6 +22,8 @@ export interface AircraftAbility {
 export interface AircraftConfig {
   id: string;
   displayName: string;
+  /** Short role label shown in the hangar, e.g. Scout, Tank, Premium. */
+  role: string;
   description: string;
   maxHealth: number;
   armor: number;
@@ -44,7 +46,8 @@ export interface AircraftConfig {
 export const STARTER_AIRCRAFT: AircraftConfig = {
   id: 'starter',
   displayName: 'Starter Aircraft',
-  description: 'A balanced aircraft that is easy to fly.',
+  role: 'Balanced',
+  description: 'A reliable all-rounder that is easy to fly.',
   maxHealth: 100,
   armor: 0,
   speed: 360,
@@ -61,38 +64,17 @@ export const STARTER_AIRCRAFT: AircraftConfig = {
 export const INTERCEPTOR: AircraftConfig = {
   id: 'interceptor',
   displayName: 'Interceptor',
-  description: 'Fast and hard-hitting, but lightly armored.',
-  maxHealth: 80,
+  role: 'Scout',
+  description: 'Fast and agile with twin cannons; light armor.',
+  maxHealth: 85,
   armor: 0,
-  speed: 450,
-  firePower: 1.15,
-  fireRate: 1.25,
+  speed: 470,
+  firePower: 1.1,
+  fireRate: 1.2,
   radius: 14,
   invulnerabilitySeconds: 0.7,
-  weaponId: BASIC_CANNON.id,
-  ability: {
-    id: 'afterburner',
-    displayName: 'Afterburner',
-    description: 'Planned: a temporary speed burst.',
-  },
-  price: 1_200,
-  unlock: { kind: 'purchase' },
-  availability: 'available',
-};
-
-export const FORTRESS: AircraftConfig = {
-  id: 'fortress',
-  displayName: 'Fortress',
-  description: 'Heavily armored and tough, but slower.',
-  maxHealth: 170,
-  armor: 5,
-  speed: 300,
-  firePower: 0.9,
-  fireRate: 0.85,
-  radius: 20,
-  invulnerabilitySeconds: 0.9,
-  weaponId: BASIC_CANNON.id,
-  price: 2_500,
+  weaponId: DOUBLE_SHOT.id,
+  price: 800,
   unlock: { kind: 'purchase' },
   availability: 'available',
 };
@@ -100,12 +82,13 @@ export const FORTRESS: AircraftConfig = {
 export const GUNSHIP: AircraftConfig = {
   id: 'gunship',
   displayName: 'Gunship',
-  description: 'Heavy firepower with a wide spread, but sluggish.',
-  maxHealth: 130,
+  role: 'Heavy',
+  description: 'Heavy firepower with a wide spread; slower to turn.',
+  maxHealth: 125,
   armor: 3,
-  speed: 320,
-  firePower: 0.95,
-  fireRate: 0.8,
+  speed: 330,
+  firePower: 1.3,
+  fireRate: 0.95,
   radius: 19,
   invulnerabilitySeconds: 0.8,
   weaponId: SPREAD_SHOT.id,
@@ -114,19 +97,38 @@ export const GUNSHIP: AircraftConfig = {
   availability: 'available',
 };
 
+export const FORTRESS: AircraftConfig = {
+  id: 'fortress',
+  displayName: 'Fortress',
+  role: 'Tank',
+  description: 'A flying bunker: heavy armor and high health, but slow.',
+  maxHealth: 200,
+  armor: 7,
+  speed: 300,
+  firePower: 1,
+  fireRate: 0.85,
+  radius: 20,
+  invulnerabilitySeconds: 0.9,
+  weaponId: BASIC_CANNON.id,
+  price: 2_400,
+  unlock: { kind: 'purchase' },
+  availability: 'available',
+};
+
 export const PHANTOM: AircraftConfig = {
   id: 'phantom',
   displayName: 'Phantom',
-  description: 'Extremely fast with twin cannons, but fragile.',
-  maxHealth: 70,
-  armor: 0,
-  speed: 470,
-  firePower: 1.1,
-  fireRate: 1.3,
+  role: 'Elite',
+  description: 'Blistering speed and twin cannons; a glass cannon.',
+  maxHealth: 95,
+  armor: 2,
+  speed: 500,
+  firePower: 1.35,
+  fireRate: 1.35,
   radius: 13,
   invulnerabilitySeconds: 0.65,
   weaponId: DOUBLE_SHOT.id,
-  price: 2_200,
+  price: 3_600,
   unlock: { kind: 'purchase' },
   availability: 'available',
 };
@@ -134,25 +136,27 @@ export const PHANTOM: AircraftConfig = {
 export const RAPTOR: AircraftConfig = {
   id: 'raptor',
   displayName: 'Raptor',
-  description: 'Balanced hull mounting a hard-hitting railgun.',
-  maxHealth: 105,
-  armor: 2,
-  speed: 400,
-  firePower: 1.2,
-  fireRate: 1,
+  role: 'Premium',
+  description: 'The flagship: armored hull mounting a hard-hitting railgun.',
+  maxHealth: 150,
+  armor: 4,
+  speed: 430,
+  firePower: 1.7,
+  fireRate: 1.15,
   radius: 16,
   invulnerabilitySeconds: 0.8,
   weaponId: RAILGUN.id,
-  price: 3_200,
+  price: 5_200,
   unlock: { kind: 'purchase' },
   availability: 'available',
 };
 
+/** Ordered from cheapest to most capable so progression reads clearly. */
 export const AIRCRAFT: AircraftConfig[] = [
   STARTER_AIRCRAFT,
   INTERCEPTOR,
-  FORTRESS,
   GUNSHIP,
+  FORTRESS,
   PHANTOM,
   RAPTOR,
 ];

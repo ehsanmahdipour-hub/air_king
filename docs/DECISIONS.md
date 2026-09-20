@@ -432,3 +432,25 @@ shared emitters.
 **Why.** This delivers a large visual upgrade with no licensed assets, keeps the
 style consistent, and stays performance-friendly. Art is isolated behind texture
 keys and SVG components, so real assets can replace it without touching gameplay.
+
+## ADR-0046: Stage select plus a hybrid, server-authoritative reward
+
+**Decision.** Add a Levels screen driven by the server's completed set and the
+shared `isLevelUnlocked` rule, and replace the flat coin conversion with a
+hybrid reward (`calculateLevelReward`): score conversion + progressive level
+bonus + difficulty multiplier, granted only on a level's first completion.
+**Why.** Players needed to see and replay stages, and the reward curve needed to
+scale with progression. Keeping unlock and reward decisions on the server (the
+client submits only a score) preserves the existing trust model, and the
+first-completion-only rule makes replaying safe without a separate anti-farm
+mechanism.
+
+## ADR-0047: Distinct aircraft models and capability-ordered pricing
+
+**Decision.** Order the roster by price and give each aircraft a role and a
+distinct SVG silhouette, and rebalance stats so more expensive aircraft are
+generally stronger or more specialized (Scout, Heavy, Tank, Elite, Premium).
+**Why.** Colour-only differences made progression feel flat. Roles plus distinct
+models communicate *why* an aircraft costs more, and capability-ordered pricing
+keeps the price-to-power relationship understandable. Models are inline SVG, so
+they stay lightweight and replaceable.

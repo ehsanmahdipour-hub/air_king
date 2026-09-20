@@ -481,7 +481,7 @@ describe('level completion', () => {
 
   it('converts total score to coins using the world economy config', () => {
     const world = completeSingleEnemyLevel({
-      economy: { scorePerCoin: 10, minCoinsPerLevel: 0 },
+      economy: { ...DEFAULT_ECONOMY_CONFIG, scorePerCoin: 10, minCoinsPerLevel: 0 },
     });
 
     expect(world.result?.coins).toBe(Math.floor((world.result?.totalScore ?? 0) / 10));

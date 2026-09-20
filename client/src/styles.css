@@ -937,3 +937,225 @@ body {
   min-width: 96px;
   padding: 7px 12px;
 }
+
+/* Game header / navigation */
+
+.game-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #16203a;
+  background: linear-gradient(180deg, #0a1224, #070c16);
+}
+
+.game-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.game-header__titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-header__title {
+  color: #dbe7ff;
+  font-size: 16px;
+  letter-spacing: 3px;
+}
+
+.game-header__sub {
+  color: #5f6f92;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.game-header__stats {
+  display: flex;
+  gap: 8px;
+}
+
+.hud-chip {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 10px;
+  border: 1px solid #253354;
+  border-radius: 6px;
+  background: #0d1526;
+}
+
+.hud-chip__label {
+  color: #5f6f92;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.hud-chip__value {
+  color: #ffe066;
+  font-size: 13px;
+}
+
+.hud-chip--wide .hud-chip__value {
+  color: #7fd1ff;
+}
+
+.game-nav {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.game-nav__item {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #9fb0d4;
+  font-size: 12px;
+}
+
+.game-nav__item:hover {
+  color: #dbe7ff;
+  background: #0d1526;
+}
+
+.game-nav__item--active {
+  border-color: #3a5080;
+  background: #11203c;
+  color: #7fd1ff;
+}
+
+.game-header__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-header__username {
+  color: #7fd1ff;
+  font-size: 12px;
+}
+
+.menu__item--primary {
+  border-color: #3a5080;
+  background: #15305c;
+}
+
+.auth__logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.aircraft-card__role {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid #3a5080;
+  border-radius: 999px;
+  color: #7fd1ff;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+/* Level select */
+
+.levels__note {
+  margin: 8px 16px 0;
+  color: #5f6f92;
+  font-size: 11px;
+}
+
+.levels__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 12px 16px 20px;
+}
+
+.level-card {
+  padding: 12px;
+  border: 1px solid #16203a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0c1428, #080d18);
+}
+
+.level-card--completed {
+  border-color: #235c40;
+}
+
+.level-card--unlocked {
+  border-color: #3a5080;
+}
+
+.level-card--locked {
+  opacity: 0.6;
+}
+
+.level-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.level-card__num {
+  color: #7fd1ff;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+.badge--completed {
+  border-color: #235c40;
+  color: #6ee7a8;
+}
+
+.badge--unlocked {
+  border-color: #3a5080;
+  color: #7fd1ff;
+}
+
+.badge--locked {
+  border-color: #5c2323;
+  color: #ff8b8b;
+}
+
+.level-card__name {
+  margin: 8px 0 4px;
+  color: #dbe7ff;
+  font-size: 13px;
+}
+
+.level-card__meta,
+.level-card__boss,
+.level-card__best,
+.level-card__current {
+  margin: 0 0 4px;
+  font-size: 11px;
+}
+
+.level-card__meta {
+  color: #9fb0d4;
+}
+
+.level-card__boss {
+  color: #ff9a9a;
+}
+
+.level-card__best {
+  color: #ffe066;
+}
+
+.level-card__current {
+  color: #7fd1ff;
+}
+
+.level-card__actions {
+  margin-top: 8px;
+}
+
+.level-card__button {
+  width: 100%;
+  padding: 7px;
+}

@@ -33,6 +33,8 @@ export interface GameProgressBridge {
   completedLevelIds: Set<string>;
   /** Furthest unlocked level id; the game starts here when present. */
   currentLevelId?: string;
+  /** Explicit level chosen from stage select; takes priority when set. */
+  selectedLevelId?: string;
   /** Player upgrade levels applied to the loadout. */
   upgradeLevels?: UpgradeLevels;
   /** Equipped aircraft id applied to the loadout. */

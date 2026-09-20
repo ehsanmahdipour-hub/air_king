@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 
+import { AirKingsLogo } from '../branding/AirKingsLogo';
 import { useAuth } from './AuthContext';
 
 type Mode = 'login' | 'register';
@@ -40,6 +41,9 @@ export function AuthForm() {
 
   return (
     <section className="auth">
+      <div className="auth__logo">
+        <AirKingsLogo size={56} />
+      </div>
       <h1 className="auth__brand">AIR KINGS</h1>
 
       <div className="auth__tabs">

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { DEFAULT_ECONOMY_CONFIG, calculateCoins } from '@game/shared';
+import { DEFAULT_ECONOMY_CONFIG, calculateLevelReward } from '@game/shared';
 
 import { buildApp } from '../app';
 import { prisma } from '../db/prisma';
@@ -51,6 +51,15 @@ function completeLevel(app: FastifyInstance, token: string, levelId: string, pay
     payload: payload as object,
   });
 }
+
+/** Authoritative coins for the first clear of level 1 (score 1000). */
+const expectedCoins = calculateLevelReward({
+  totalScore: 1000 + 500,
+  levelNumber: 1,
+  difficulty: 'normal',
+  firstCompletion: true,
+  config: DEFAULT_ECONOMY_CONFIG,
+}).totalCoins;
 
 describe('progress routes', () => {
   let app: FastifyInstance;
@@ -112,7 +121,6 @@ describe('progress routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = response.json();
-      const expectedCoins = calculateCoins(1000 + 500, DEFAULT_ECONOMY_CONFIG);
 
       expect(body.firstCompletion).toBe(true);
       expect(body.result).toEqual({
@@ -140,7 +148,7 @@ describe('progress routes', () => {
 
       expect(response.statusCode).toBe(200);
       const body = response.json();
-      expect(body.profile.coins).toBe(15);
+      expect(body.profile.coins).toBe(expectedCoins);
       expect(body.profile.currentLevelId).toBe('level-02');
       expect(body.levels).toContainEqual({
         levelId: 'level-01',
@@ -159,7 +167,7 @@ describe('progress routes', () => {
       const body = second.json();
       expect(body.firstCompletion).toBe(false);
       expect(body.result.coins).toBe(0);
-      expect(body.profile.coins).toBe(15);
+      expect(body.profile.coins).toBe(expectedCoins);
     });
 
     it('improves best and total score on a better replay without extra coins', async () => {
@@ -172,7 +180,26 @@ describe('progress routes', () => {
       expect(body.result.coins).toBe(0);
       expect(body.level.bestScore).toBe(1500);
       expect(body.profile.totalScore).toBe(1500);
-      expect(body.profile.coins).toBe(calculateCoins(1300, DEFAULT_ECONOMY_CONFIG));
+      expect(body.profile.coins).toBe(
+        calculateLevelReward({
+          totalScore: 1300,
+          levelNumber: 1,
+          difficulty: 'normal',
+          firstCompletion: true,
+          config: DEFAULT_ECONOMY_CONFIG,
+        }).totalCoins,
+      );
+    });
+
+    it('grants larger rewards for later levels', async () => {
+      const token = await register(app, 'progression@example.com');
+
+      const first = await completeLevel(app, token, 'level-01', { score: 1000 });
+      const second = await completeLevel(app, token, 'level-02', { score: 1000 });
+
+      expect(first.statusCode).toBe(200);
+      expect(second.statusCode).toBe(200);
+      expect(second.json().result.coins).toBeGreaterThan(first.json().result.coins);
     });
 
     it('rejects completing a locked level', async () => {

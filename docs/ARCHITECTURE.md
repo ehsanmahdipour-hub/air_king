@@ -252,6 +252,23 @@ testable and replaceable.
   `upgradeIcons.tsx`) so visuals are modular and replaceable, and upgrade values
   are shown as real gameplay numbers via `upgradeEffectiveValue`.
 
+### Progression, stage select and economy
+
+- The main navigation includes a **Levels** panel (`app/levels/LevelsPanel.tsx`)
+  listing the whole campaign. Unlock state comes from the server's completed
+  levels via the shared `isLevelUnlocked`; locked levels cannot be started. The
+  game reads `bridge.selectedLevelId` to start a chosen stage.
+- Coins are a **server-authoritative hybrid reward**: `calculateLevelReward`
+  combines a score conversion, a progressive level bonus and a difficulty
+  multiplier, and is granted only on a level's first completion. The server reads
+  the player's stored difficulty and rejects client-supplied reward fields, so
+  replays and manipulated requests cannot farm coins.
+- Aircraft progression is ordered cheapest → most capable in `config/aircraft.ts`
+  (role labels: Balanced, Scout, Heavy, Tank, Elite, Premium) with distinct
+  gameplay identities, and the hangar draws a **different SVG silhouette per
+  aircraft** (`aircraftArt.tsx`) so the roster is not a recolor. The header and
+  auth screen share the AIR KINGS logo (`branding/AirKingsLogo.tsx`).
+
 The Phaser adapter (`client/src/game`) is split by concern:
 
 - `input/PlayerInput.ts` — keyboard/pointer → engine-agnostic `InputState`.

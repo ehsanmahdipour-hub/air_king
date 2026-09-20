@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FORTRESS, GUNSHIP, INTERCEPTOR, PHANTOM, RAPTOR, STARTER_AIRCRAFT } from '../config/aircraft';
 import { DEFAULT_UPGRADE_LEVELS, type UpgradeLevels } from '../config/upgrades';
-import { BASIC_CANNON } from '../config/weapons';
+import { BASIC_CANNON, getWeapon } from '../config/weapons';
 import { getUpgrade } from '../config/upgrades';
 import { resolveLoadout, upgradeEffectiveValue } from './loadout';
 
@@ -67,12 +67,13 @@ describe('resolveLoadout', () => {
   });
 
   it('applies the equipped aircraft stats', () => {
+    const interceptorWeapon = getWeapon(INTERCEPTOR.weaponId);
     const interceptor = resolveLoadout({ aircraft: INTERCEPTOR });
     expect(interceptor.maxHealth).toBe(INTERCEPTOR.maxHealth);
     expect(interceptor.speed).toBe(INTERCEPTOR.speed);
-    expect(interceptor.weapon.fireRate).toBeCloseTo(BASIC_CANNON.fireRate * INTERCEPTOR.fireRate, 6);
+    expect(interceptor.weapon.fireRate).toBeCloseTo(interceptorWeapon.fireRate * INTERCEPTOR.fireRate, 6);
     expect(interceptor.weapon.projectile.damage).toBe(
-      Math.round(BASIC_CANNON.projectile.damage * INTERCEPTOR.firePower),
+      Math.round(interceptorWeapon.projectile.damage * INTERCEPTOR.firePower),
     );
 
     const fortress = resolveLoadout({ aircraft: FORTRESS });
@@ -82,13 +83,16 @@ describe('resolveLoadout', () => {
   });
 
   it('combines aircraft and upgrade effects', () => {
+    const weapon = getWeapon(INTERCEPTOR.weaponId);
     const loadout = resolveLoadout({
       aircraft: INTERCEPTOR,
       upgrades: levels({ 'weapon-damage': 3 }),
     });
 
-    // (10 + 6) * interceptor firePower 1.15 = 18.4 -> 18
-    expect(loadout.weapon.projectile.damage).toBe(18);
+    // (base damage + 6) * interceptor firePower 1.1
+    expect(loadout.weapon.projectile.damage).toBe(
+      Math.round((weapon.projectile.damage + 6) * INTERCEPTOR.firePower),
+    );
   });
 
   it('resolves the weapons of the expanded aircraft roster', () => {

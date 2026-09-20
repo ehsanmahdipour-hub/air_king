@@ -1,6 +1,7 @@
 import {
   DEFAULT_SETTINGS,
   DEFAULT_UPGRADE_LEVELS,
+  getLevel,
   type AircraftStateData,
   type GameSettings,
   type PlayerProfileData,
@@ -14,7 +15,9 @@ import { useAuth } from './auth/AuthContext';
 import { me } from './auth/authApi';
 import { equipAircraft, getAircraft, purchaseAircraft } from './aircraft/aircraftApi';
 import { AircraftPanel } from './aircraft/AircraftPanel';
+import { AirKingsLogo } from './branding/AirKingsLogo';
 import { GameStage } from './GameStage';
+import { LevelsPanel } from './levels/LevelsPanel';
 import { completeLevel, getProgress } from './progress/progressApi';
 import { ProfilePanel } from './profile/ProfilePanel';
 import { getSettings, updateSettings } from './settings/settingsApi';
@@ -24,25 +27,16 @@ import { getUpgrades, purchaseUpgrade } from './upgrades/upgradesApi';
 import { UpgradesPanel } from './upgrades/UpgradesPanel';
 import type { GameProgressBridge, LevelCompleteSummary } from '../game/progressBridge';
 
-type SessionCheck = 'idle' | 'checking' | 'ok' | 'error';
 type LoadState = 'loading' | 'ready' | 'error';
 type Screen = 'menu' | 'playing';
-type Panel = 'none' | 'aircraft' | 'upgrades' | 'settings' | 'profile';
+type Panel = 'none' | 'levels' | 'aircraft' | 'upgrades' | 'settings' | 'profile';
 
 export function App() {
   return (
     <div className="app">
-      <header className="app__header">
-        <h1>AIR KINGS</h1>
-        <SessionControls />
-      </header>
-
-      <main className="app__body">
-        <AuthGate />
-      </main>
-
+      <AuthGate />
       <footer className="app__footer">
-        Phase 11 — settings & UX · WASD/mouse to fly · Space/click to fire · ESC to pause
+        AIR KINGS · move with WASD/arrows or the mouse · fire with Space/click · ESC to pause
       </footer>
     </div>
   );
@@ -58,31 +52,13 @@ function AuthGate() {
   return status === 'authenticated' ? <AccountView /> : <AuthForm />;
 }
 
-function SessionControls() {
-  const { user, status, logout } = useAuth();
-
-  if (status !== 'authenticated' || !user) {
-    return null;
-  }
-
-  return (
-    <div className="app__session">
-      <span className="app__user">{user.username}</span>
-      <button type="button" className="app__button" onClick={() => void logout()}>
-        Log out
-      </button>
-    </div>
-  );
-}
-
 /**
  * Authenticated shell. Owns progression, upgrades, aircraft and settings
- * networking, renders the menu/panels, and injects a bridge into the game so
- * completions persist and the equipped aircraft/upgrades/settings drive play.
+ * networking, renders the game header/nav/panels, and injects a bridge into the
+ * game so completions persist and the equipped loadout drives play.
  */
 function AccountView() {
   const { user, logout } = useAuth();
-  const [sessionCheck, setSessionCheck] = useState<SessionCheck>('idle');
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [screen, setScreen] = useState<Screen>('menu');
   const [panel, setPanel] = useState<Panel>('none');
@@ -203,13 +179,25 @@ function AccountView() {
   }
 
   async function verifySession(): Promise<void> {
-    setSessionCheck('checking');
     try {
       await me();
-      setSessionCheck('ok');
     } catch {
-      setSessionCheck('error');
+      // The auth layer handles an expired session by returning to the login screen.
     }
+  }
+
+  function continueRun(): void {
+    bridge.selectedLevelId = undefined;
+    setSummary(null);
+    setPanel('none');
+    setScreen('playing');
+  }
+
+  function startLevel(levelId: string): void {
+    bridge.selectedLevelId = levelId;
+    setSummary(null);
+    setPanel('none');
+    setScreen('playing');
   }
 
   function openPanel(next: Panel): void {
@@ -217,6 +205,17 @@ function AccountView() {
   }
 
   function renderPanel() {
+    if (panel === 'levels' && profile) {
+      return (
+        <LevelsPanel
+          completedLevelIds={bridge.completedLevelIds}
+          bestScores={bridge.bestScores}
+          currentLevelId={profile.currentLevelId}
+          onPlay={startLevel}
+          onClose={() => setPanel('none')}
+        />
+      );
+    }
     if (panel === 'aircraft' && profile && aircraft) {
       return (
         <AircraftPanel
@@ -261,47 +260,66 @@ function AccountView() {
     return null;
   }
 
+  const levelNumber = profile ? safeLevelNumber(profile.currentLevelId) : 1;
+
   return (
     <div className="account">
-      <div className="account__bar">
-        <span>
-          Signed in as <strong>{user?.email}</strong>
-        </span>
+      <header className="game-header">
+        <div className="game-header__brand">
+          <AirKingsLogo size={36} />
+          <div className="game-header__titles">
+            <span className="game-header__title">AIR KINGS</span>
+            <span className="game-header__sub">Arcade Air Combat</span>
+          </div>
+        </div>
+
         {profile && (
-          <span className="account__progress">
-            Coins: {profile.coins} · Level: {profile.currentLevelId} · Aircraft:{' '}
-            {profile.equippedAircraftId}
-          </span>
+          <div className="game-header__stats">
+            <span className="hud-chip">
+              <span className="hud-chip__label">Coins</span>
+              <span className="hud-chip__value">{profile.coins.toLocaleString()}</span>
+            </span>
+            <span className="hud-chip">
+              <span className="hud-chip__label">Level</span>
+              <span className="hud-chip__value">{levelNumber}</span>
+            </span>
+            <span className="hud-chip hud-chip--wide">
+              <span className="hud-chip__label">Aircraft</span>
+              <span className="hud-chip__value">{profile.equippedAircraftId}</span>
+            </span>
+          </div>
         )}
-        {screen === 'playing' && (
-          <button
-            type="button"
-            className="app__button"
-            onClick={() => {
-              setScreen('menu');
-              setPanel('none');
-            }}
-          >
-            Menu
+
+        <nav className="game-nav">
+          {screen === 'playing' && (
+            <button
+              type="button"
+              className="game-nav__item"
+              onClick={() => {
+                setScreen('menu');
+                setPanel('none');
+              }}
+            >
+              Menu
+            </button>
+          )}
+          <NavButton id="levels" panel={panel} label="Levels" onOpen={openPanel} />
+          <NavButton id="aircraft" panel={panel} label="Aircraft" onOpen={openPanel} />
+          <NavButton id="upgrades" panel={panel} label="Upgrades" onOpen={openPanel} />
+          <NavButton id="settings" panel={panel} label="Settings" onOpen={openPanel} />
+          <NavButton id="profile" panel={panel} label="Profile" onOpen={openPanel} />
+        </nav>
+
+        <div className="game-header__user">
+          <span className="game-header__username">{user?.username}</span>
+          <button type="button" className="app__button" onClick={() => void verifySession()}>
+            Session
           </button>
-        )}
-        <button type="button" className="app__button" onClick={() => openPanel('profile')}>
-          Profile
-        </button>
-        <button type="button" className="app__button" onClick={() => openPanel('settings')}>
-          Settings
-        </button>
-        <button
-          type="button"
-          className="app__button"
-          onClick={() => void verifySession()}
-          disabled={sessionCheck === 'checking'}
-        >
-          {sessionCheck === 'checking' ? 'Checking…' : 'Verify session'}
-        </button>
-        {sessionCheck === 'ok' && <span className="account__ok">Session OK</span>}
-        {sessionCheck === 'error' && <span className="account__error">Session failed</span>}
-      </div>
+          <button type="button" className="app__button" onClick={() => void logout()}>
+            Log out
+          </button>
+        </div>
+      </header>
 
       <div className="account__body">
         {loadState === 'loading' && <p className="app__message">Loading your profile…</p>}
@@ -319,16 +337,11 @@ function AccountView() {
 
         {loadState === 'ready' && screen === 'menu' && panel === 'none' && (
           <nav className="menu">
-            <button
-              type="button"
-              className="menu__item"
-              onClick={() => {
-                setSummary(null);
-                setPanel('none');
-                setScreen('playing');
-              }}
-            >
-              Play
+            <button type="button" className="menu__item menu__item--primary" onClick={continueRun}>
+              Continue
+            </button>
+            <button type="button" className="menu__item" onClick={() => openPanel('levels')}>
+              Levels
             </button>
             <button type="button" className="menu__item" onClick={() => openPanel('aircraft')}>
               Aircraft
@@ -369,6 +382,33 @@ function AccountView() {
         )}
       </div>
     </div>
+  );
+}
+
+function safeLevelNumber(levelId: string): number {
+  try {
+    return getLevel(levelId).levelNumber;
+  } catch {
+    return 1;
+  }
+}
+
+interface NavButtonProps {
+  id: Panel;
+  panel: Panel;
+  label: string;
+  onOpen: (panel: Panel) => void;
+}
+
+function NavButton({ id, panel, label, onOpen }: NavButtonProps) {
+  return (
+    <button
+      type="button"
+      className={`game-nav__item ${panel === id ? 'game-nav__item--active' : ''}`}
+      onClick={() => onOpen(id)}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -414,11 +454,7 @@ function LevelCompleteOverlay({ summary, onNext, onReplay, onMenu }: LevelComple
         {summary.isFinal ? (
           <p className="level-complete__final">Campaign complete! You cleared every level.</p>
         ) : summary.nextLevel ? (
-          <button
-            type="button"
-            className="app__button level-complete__primary"
-            onClick={onNext}
-          >
+          <button type="button" className="app__button level-complete__primary" onClick={onNext}>
             Next Level — {summary.nextLevel.name}
           </button>
         ) : (

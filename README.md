@@ -49,6 +49,28 @@ levels:
 The level's own design tier still contributes, and both combine into a single
 `ResolvedDifficulty` that enemies, spawning, bosses and the player weapon read.
 
+## Stage select & progression
+
+The main navigation has a **Levels** screen. Levels unlock strictly in order
+(also enforced server-side), and any completed level can be replayed. The header
+carries the AIR KINGS logo, coin balance, current level, equipped aircraft and
+navigation with the active page highlighted.
+
+## Economy & rewards
+
+Coins are granted on a level's **first completion only** and are computed
+server-side (`config/economy.ts`, `calculateLevelReward`) as a hybrid:
+
+```
+coins = floor(totalScore / scorePerCoin)                       // score conversion
+      + (levelBonusBase + levelBonusPerLevel × (level − 1))    // progressive level bonus
+      × difficulty multiplier (easy 0.8, normal 1.0, hard 1.25)
+```
+
+Later levels reward more; replays grant **0**; the client can only submit a
+score, never coins or prices. Aircraft prices, upgrade costs and the campaign
+curve are all data-driven so the economy stays tunable.
+
 ## Campaign & content
 
 - **50 levels.** Levels 1-5 are hand-authored; levels 6-50 are generated from a

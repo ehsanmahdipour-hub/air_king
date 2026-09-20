@@ -94,7 +94,10 @@ export function AircraftPanel({
                 </div>
               </div>
 
-              <h3 className="aircraft-card__name">{aircraft.displayName}</h3>
+              <h3 className="aircraft-card__name">
+                {aircraft.displayName}
+                <span className="aircraft-card__role">{aircraft.role}</span>
+              </h3>
               <p className="aircraft-card__description">{aircraft.description}</p>
 
               <div className="stat-list">
