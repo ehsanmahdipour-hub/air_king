@@ -112,11 +112,14 @@ server (Fastify → services → Prisma)
 SQLite (dev) / PostgreSQL (prod)
 ```
 
+
 Gameplay **rules** live in the shared, framework-free simulation
 (`shared/src/core`) and are unit-tested headlessly. Phaser only renders the
 simulation, reads input and plays effects. Game data (player, enemies, weapons,
 levels) lives in `shared/src/config` so content is added as data. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+
 
 
 ## Project structure
